@@ -1,0 +1,72 @@
+openapi: 3.0.1
+info:
+  title: AI Safety Assessment API
+  description: API for analyzing safety hazards in images and querying safety standards.
+  version: 1.0.0
+servers:
+  - url: https://<YOUR_APP_URL>
+    description: Production Server
+
+paths:
+  /api/analyze-image:
+    post:
+      operationId: AnalyzeSafetyImage
+      summary: Analyze an image for safety hazards
+      description: detailed 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  description: Base64 encoded image string (with or without data URI prefix).
+                context:
+                  type: string
+                  description: The specific safety standard or context to check against (e.g., "OSHA 1910.22").
+      responses:
+        '200':
+          description: Successful analysis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis:
+                    type: string
+                    description: The AI-generated analysis of the image.
+        '400':
+          description: Invalid input
+        '500':
+          description: Server error
+
+  /api/chat:
+    post:
+      operationId: ChatWithSafetyBot
+      summary: Chat with the Safety Assistant
+      description: Send a message to the AI Safety Assistant, which can search local standards.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: The user's query or message.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                    description: The assistant's response.
+        '500':
+          description: Server error
