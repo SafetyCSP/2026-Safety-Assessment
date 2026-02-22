@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAssessment } from '@/context/AssessmentContext';
 import { AssessmentConfig } from '@/types/standards';
-import { ArrowRight, CheckSquare, Square, User, MapPin, Briefcase, FileText } from 'lucide-react';
+import { ArrowRight, CheckSquare, Square, User, MapPin, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function StartAssessmentForm() {
@@ -22,11 +22,13 @@ export function StartAssessmentForm() {
 
     const [customerName, setCustomerName] = useState('');
     const [customerLocation, setCustomerLocation] = useState('');
+    const [sapAccountNumber, setSapAccountNumber] = useState('');
+    const [customerContact, setCustomerContact] = useState('');
+    const [trackCode, setTrackCode] = useState('');
+    const [subtrackCode, setSubtrackCode] = useState('');
 
-    const [industries, setIndustries] = useState<string[]>([]);
     const [standards, setStandards] = useState<string[]>([]);
 
-    const INDUSTRIES = ['Manufacturing', 'Commercial', 'Healthcare', 'Government'];
     const STANDARDS = ['OSHA 1910', 'The Joint Commission', 'DNV'];
 
     const toggleSelection = (list: string[], setList: (s: string[]) => void, item: string) => {
@@ -54,8 +56,11 @@ export function StartAssessmentForm() {
             customer: {
                 name: customerName,
                 location: customerLocation,
+                sapAccountNumber: sapAccountNumber,
+                contact: customerContact,
+                trackCode: trackCode,
+                subtrackCode: subtrackCode,
             },
-            industry: industries,
             standards: standards,
         };
 
@@ -70,7 +75,7 @@ export function StartAssessmentForm() {
         }, 500);
     };
 
-    const isFormValid = assessorName && amName && customerName && industries.length > 0;
+    const isFormValid = assessorName && amName && customerName;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -126,7 +131,7 @@ export function StartAssessmentForm() {
 
             {/* 3. Customer Info */}
             <Section title="Customer Information" icon={<MapPin size={18} />}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input
                         label="Customer Name"
                         value={customerName}
@@ -141,20 +146,34 @@ export function StartAssessmentForm() {
                         placeholder="Building A, New York, NY"
                         required
                     />
+                    <Input
+                        label="SAP Account Number"
+                        value={sapAccountNumber}
+                        onChange={setSapAccountNumber}
+                        placeholder="1234567"
+                    />
                 </div>
-            </Section>
-
-            {/* 4. Industry Selection */}
-            <Section title="Industry" icon={<Briefcase size={18} />}>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {INDUSTRIES.map(ind => (
-                        <Checkbox
-                            key={ind}
-                            label={ind}
-                            checked={industries.includes(ind)}
-                            onChange={() => toggleSelection(industries, setIndustries, ind)}
-                        />
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+                    <Input
+                        label="Customer Contact"
+                        value={customerContact}
+                        onChange={setCustomerContact}
+                        placeholder="Jane Doe, Safety Manager"
+                    />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <Input
+                        label="Track Code"
+                        value={trackCode}
+                        onChange={setTrackCode}
+                        placeholder="TRK-001"
+                    />
+                    <Input
+                        label="Subtrack Code"
+                        value={subtrackCode}
+                        onChange={setSubtrackCode}
+                        placeholder="SUB-001"
+                    />
                 </div>
             </Section>
 
@@ -177,7 +196,7 @@ export function StartAssessmentForm() {
                 </button>
                 {!isFormValid && (
                     <p className="text-center text-xs text-muted-foreground mt-2">
-                        Please fill out all required fields and select at least one industry and standard.
+                        Please fill out all required fields.
                     </p>
                 )}
             </div>

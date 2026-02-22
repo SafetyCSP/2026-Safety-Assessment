@@ -11,8 +11,12 @@ export interface AssessmentConfig {
     customer: {
         name: string;
         location: string;
+        sapAccountNumber?: string;
+        contact?: string;
+        trackCode?: string;
+        subtrackCode?: string;
     };
-    industry: string[];
+    industry?: string[];
     standards: string[];
 }
 

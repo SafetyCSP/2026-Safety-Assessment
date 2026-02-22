@@ -199,7 +199,10 @@ function ReportContent() {
                                     <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider border-b pb-1 mb-2">Customer</h4>
                                     <div className="font-medium">{config.customer.name}</div>
                                     <div className="text-muted-foreground">{config.customer.location}</div>
-                                    <div className="text-xs text-muted-foreground mt-1">Industry: {config.industry.join(", ")}</div>
+                                    {config.customer.sapAccountNumber && <div className="text-xs text-muted-foreground mt-1">SAP: {config.customer.sapAccountNumber}</div>}
+                                    {config.customer.contact && <div className="text-xs text-muted-foreground">Contact: {config.customer.contact}</div>}
+                                    {config.customer.trackCode && <div className="text-xs text-muted-foreground">Track: {config.customer.trackCode}{config.customer.subtrackCode ? ` / ${config.customer.subtrackCode}` : ''}</div>}
+                                    {config.industry && config.industry.length > 0 && <div className="text-xs text-muted-foreground mt-1">Industry: {config.industry.join(", ")}</div>}
                                 </div>
 
                                 <div className="space-y-1">
