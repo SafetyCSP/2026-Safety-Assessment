@@ -423,9 +423,9 @@ const extractCitation = (text: string) => {
 function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findings: any[], config: any, data: any[] }) {
     if (!config) return null;
 
-    // Calculate alignment level
-    const alignmentLevel = stats.complianceScore > 90 ? "Substantially Aligned" : stats.complianceScore > 70 ? "Partially Aligned" : "Gaps Identified";
-    const alignmentColor = stats.complianceScore > 90 ? "text-green-600" : stats.complianceScore > 70 ? "text-orange-600" : "text-red-600";
+    // Calculate risk profile
+    const riskProfile = stats.complianceScore > 90 ? "Low Risk" : stats.complianceScore > 70 ? "Moderate Risk" : "High Risk";
+    const riskColor = stats.complianceScore > 90 ? "text-green-600" : stats.complianceScore > 70 ? "text-orange-600" : "text-red-600";
 
     // Calculate Top Categories by Risk
     const categoryStats = data.map(cat => {
@@ -465,7 +465,7 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                 </div>
                 <div className="text-right">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Compliance Score</h3>
-                    <div className={`text-4xl font-bold ${alignmentColor}`}>
+                    <div className={`text-4xl font-bold ${riskColor}`}>
                         {stats.complianceScore}%
                     </div>
                 </div>
@@ -486,9 +486,9 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-bold mb-2">2. Findings & Alignment Status</h3>
+                    <h3 className="text-lg font-bold mb-2">2. Critical Findings & Risk Profile</h3>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                        Based on observed conditions, the facility&apos;s current status relative to applicable standards is: <strong className={alignmentColor}>{alignmentLevel}</strong>.
+                        Based on observed conditions, the facility presents a <strong className={riskColor}>{riskProfile}</strong> profile.
                     </p>
 
                     {/* Top Risk Categories List */}
@@ -518,9 +518,9 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-bold mb-2">3. Opportunities for Improvement</h3>
+                    <h3 className="text-lg font-bold mb-2">3. Recommendations for Remediation</h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                        The following opportunities have been identified to further align operations with applicable standards and best practices:
+                        The following recommendations have been identified to support alignment with applicable standards and best practices:
                     </p>
 
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -530,13 +530,13 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                                 {stats.high > 0
                                     ? <li>Review {stats.high} High Priority items where gaps were observed relative to applicable requirements.</li>
                                     : <li>Review all items where alignment with standards has not yet been fully achieved.</li>}
-                                <li>Verify that emergency egress routes are maintained in accordance with applicable codes.</li>
+                                <li>Ensure all emergency exits are clear and accessible.</li>
                             </ul>
                         </div>
                         <div className="border p-3 rounded bg-muted/10">
                             <h4 className="font-semibold text-sm mb-2 text-foreground">Ongoing Opportunities</h4>
                             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                                <li>Consider targeted training to address identified gaps in applicable areas.</li>
+                                <li>Conduct refresher training for affected staff.</li>
                                 <li>Develop a corrective action plan to track resolution of Medium Priority items.</li>
                             </ul>
                         </div>
@@ -548,8 +548,8 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                     <p className="text-sm leading-relaxed text-muted-foreground">
                         This assessment identified areas where <strong>{config.customer.name}</strong> is currently aligned with applicable standards, as well as areas where further action may be needed to achieve full alignment.
                         {stats.complianceScore < 100
-                            ? " Addressing the identified gaps represents an opportunity to further align operations with regulatory requirements and industry best practices. The findings in this report are intended to support ongoing improvement efforts."
-                            : " The facility is substantially aligned with the applicable standards reviewed during this assessment. Continued self-assessment and periodic review are recommended to maintain this level of alignment."}
+                            ? " Addressing the identified gaps will bring the facility into closer alignment with regulatory requirements and industry best practices. The findings in this report are intended to support ongoing improvement efforts."
+                            : " The facility demonstrates a strong commitment to safety and regulatory compliance. Continued self-assessment and periodic review are recommended to maintain this level of alignment."}
                     </p>
                 </div>
             </div>
