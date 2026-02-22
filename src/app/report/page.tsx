@@ -423,10 +423,9 @@ const extractCitation = (text: string) => {
 function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findings: any[], config: any, data: any[] }) {
     if (!config) return null;
 
-    // Calculate risk profile and culture
-    const riskProfile = stats.complianceScore > 90 ? "Low Risk" : stats.complianceScore > 70 ? "Moderate Risk" : "High Risk";
-    const riskColor = stats.complianceScore > 90 ? "text-green-600" : stats.complianceScore > 70 ? "text-orange-600" : "text-red-600";
-    const cultureStatus = stats.complianceScore > 90 ? "strong" : stats.complianceScore > 70 ? "improving" : "stagnant";
+    // Calculate alignment level
+    const alignmentLevel = stats.complianceScore > 90 ? "Substantially Aligned" : stats.complianceScore > 70 ? "Partially Aligned" : "Gaps Identified";
+    const alignmentColor = stats.complianceScore > 90 ? "text-green-600" : stats.complianceScore > 70 ? "text-orange-600" : "text-red-600";
 
     // Calculate Top Categories by Risk
     const categoryStats = data.map(cat => {
@@ -466,7 +465,7 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                 </div>
                 <div className="text-right">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Compliance Score</h3>
-                    <div className={`text-4xl font-bold ${riskColor}`}>
+                    <div className={`text-4xl font-bold ${alignmentColor}`}>
                         {stats.complianceScore}%
                     </div>
                 </div>
@@ -476,26 +475,26 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                 <div>
                     <h3 className="text-lg font-bold mb-2">1. Assessment Overview</h3>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                        This report summarizes the findings of the comprehensive safety assessment conducted at <strong>{config.customer.name}</strong> ({config.customer.location}) on {config.assessor.date}.
-                        The objective of this review was to evaluate alignment with <strong>regulatory compliance</strong> standards, identify potential hazards, and assess the overall effectiveness of current safety management systems.
+                        This report presents the findings of the safety assessment conducted at <strong>{config.customer.name}</strong> ({config.customer.location}) on {config.assessor.date}.
+                        The objective of this review was to evaluate the degree of alignment with applicable <strong>regulatory compliance</strong> standards and identify areas where current conditions may differ from established requirements or best practices.
                     </p>
                     <p className="text-sm leading-relaxed text-muted-foreground mt-2">
-                        The assessment identified a total of <strong>{stats.totalQuestions - stats.complianceCount}</strong> opportunities for improvement regarding regulatory standards.
-                        Of these, <strong>{stats.high}</strong> were classified as High Priority, suggesting a focus for immediate review.
-                        {topCategoryNames && `The primary areas for improvement identified during this audit are within the ${topCategoryNames} categories.`}
+                        The assessment identified <strong>{stats.totalQuestions - stats.complianceCount}</strong> areas where alignment with applicable standards has not yet been fully achieved.
+                        Of these, <strong>{stats.high}</strong> were categorized as High Priority based on potential regulatory exposure.
+                        {topCategoryNames && `The categories with the greatest number of identified gaps are ${topCategoryNames}.`}
                     </p>
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-bold mb-2">2. Critical Findings & Risk Profile</h3>
+                    <h3 className="text-lg font-bold mb-2">2. Findings & Alignment Status</h3>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                        Based on current observations, the facility presents a <strong className={riskColor}>{riskProfile}</strong> profile.
+                        Based on observed conditions, the facility&apos;s current status relative to applicable standards is: <strong className={alignmentColor}>{alignmentLevel}</strong>.
                     </p>
 
                     {/* Top Risk Categories List */}
                     {topCategories.length > 0 && (
                         <div className="mt-4">
-                            <h4 className="text-sm font-semibold text-foreground mb-3">Primary Areas for Improvement:</h4>
+                            <h4 className="text-sm font-semibold text-foreground mb-3">Categories with Identified Gaps:</h4>
                             <div className="grid gap-3 sm:grid-cols-3">
                                 {topCategories.map((cat, idx) => (
                                     <div key={idx} className="bg-muted/20 p-3 rounded-lg border">
@@ -519,38 +518,38 @@ function ExecutiveSummary({ stats, findings, config, data }: { stats: any, findi
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-bold mb-2">3. Recommendations for Remediation</h3>
+                    <h3 className="text-lg font-bold mb-2">3. Opportunities for Improvement</h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                        To support your safety goals and enhance compliance, the following actions are suggested for consideration:
+                        The following opportunities have been identified to further align operations with applicable standards and best practices:
                     </p>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="border p-3 rounded bg-muted/10">
-                            <h4 className="font-semibold text-sm mb-2 text-foreground">Priority 1 Recommendations (Immediate Focus)</h4>
+                            <h4 className="font-semibold text-sm mb-2 text-foreground">Near-Term Opportunities</h4>
                             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                                 {stats.high > 0
-                                    ? <li>Review and address {stats.high} High Priority findings.</li>
-                                    : <li>Review all identified non-compliant items.</li>}
-                                <li>Ensure all emergency exits are clear and accessible.</li>
+                                    ? <li>Review {stats.high} High Priority items where gaps were observed relative to applicable requirements.</li>
+                                    : <li>Review all items where alignment with standards has not yet been fully achieved.</li>}
+                                <li>Verify that emergency egress routes are maintained in accordance with applicable codes.</li>
                             </ul>
                         </div>
                         <div className="border p-3 rounded bg-muted/10">
-                            <h4 className="font-semibold text-sm mb-2 text-foreground">Priority 2 Recommendations (Near-Term Focus)</h4>
+                            <h4 className="font-semibold text-sm mb-2 text-foreground">Ongoing Opportunities</h4>
                             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                                <li>Conduct refresher training for affected staff.</li>
-                                <li>Consider developing an action plan for Medium priority items.</li>
+                                <li>Consider targeted training to address identified gaps in applicable areas.</li>
+                                <li>Develop a corrective action plan to track resolution of Medium Priority items.</li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-bold mb-2">4. Conclusion</h3>
+                    <h3 className="text-lg font-bold mb-2">4. Summary</h3>
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                        The observed safety culture at <strong>{config.customer.name}</strong> reflects a <strong>{cultureStatus}</strong> commitment.
+                        This assessment identified areas where <strong>{config.customer.name}</strong> is currently aligned with applicable standards, as well as areas where further action may be needed to achieve full alignment.
                         {stats.complianceScore < 100
-                            ? " Addressing identified gaps will further strengthen the organization's safety posture. Implementing these recommendations will reduce risk and bring the facility into closer alignment with core regulatory requirements."
-                            : " The facility demonstrates a strong commitment to safety and regulatory compliance. Continued vigilance and regular self-assessments are recommended to maintain this high standard."}
+                            ? " Addressing the identified gaps represents an opportunity to further align operations with regulatory requirements and industry best practices. The findings in this report are intended to support ongoing improvement efforts."
+                            : " The facility is substantially aligned with the applicable standards reviewed during this assessment. Continued self-assessment and periodic review are recommended to maintain this level of alignment."}
                     </p>
                 </div>
             </div>
