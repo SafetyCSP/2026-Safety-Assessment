@@ -21,6 +21,7 @@ interface AssessmentContextType {
     addImage: (questionId: string, base64: string) => void;
     updateImageCaption: (questionId: string, imageId: string, caption: string) => void;
     removeImage: (questionId: string, index: number) => void;
+    moveImage: (questionId: string, fromIndex: number, toIndex: number) => void;
     getCategoryProgress: (categoryId: string) => { completed: number; total: number; percentage: number };
     overallProgress: { completed: number; total: number; percentage: number };
     resetAssessment: () => void;
@@ -285,6 +286,26 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
         });
     };
 
+    const moveImage = (questionId: string, fromIndex: number, toIndex: number) => {
+        setAnswers(prev => {
+            const current = prev[questionId];
+            if (!current || !current.images) return prev;
+            if (toIndex < 0 || toIndex >= current.images.length) return prev;
+
+            const newImages = [...current.images];
+            const [moved] = newImages.splice(fromIndex, 1);
+            newImages.splice(toIndex, 0, moved);
+
+            return {
+                ...prev,
+                [questionId]: {
+                    ...current,
+                    images: newImages
+                }
+            };
+        });
+    };
+
     const resetAssessment = () => {
         // Only clears active in-memory state, does NOT delete from storage
         setAnswers({});
@@ -334,6 +355,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
             addImage,
             updateImageCaption,
             removeImage,
+            moveImage,
             getCategoryProgress,
             overallProgress,
             resetAssessment,

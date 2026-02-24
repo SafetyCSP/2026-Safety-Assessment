@@ -5,7 +5,7 @@ import { Question, AnswerStatus, RiskRating } from '@/types/standards';
 import { useAssessment } from '@/context/AssessmentContext';
 import { compressImage } from '@/lib/imageUtils';
 import { cn } from '@/lib/utils';
-import { Check, X, Minus, ChevronDown, ChevronUp, AlertCircle, Bookmark, Camera, Trash2, ShieldAlert, Sparkles, FileText } from 'lucide-react';
+import { Check, X, Minus, ChevronDown, ChevronUp, AlertCircle, Bookmark, Camera, Trash2, ShieldAlert, Sparkles, FileText, ArrowUp, ArrowDown, Plus } from 'lucide-react';
 
 interface QuestionCardProps {
     question: Question;
@@ -13,7 +13,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({ question, categoryId }: QuestionCardProps) {
-    const { answers, setAnswer, addImage, updateImageCaption, removeImage, config } = useAssessment();
+    const { answers, setAnswer, addImage, updateImageCaption, removeImage, moveImage, config } = useAssessment();
     const currentAnswer = answers[question.id];
     const [showRefs, setShowRefs] = useState(false);
     const [showNotes, setShowNotes] = useState(!!currentAnswer?.notes);
@@ -106,21 +106,24 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
     // ... (keep file handling logic)
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-        // Increased limit to 5MB, but we compress it down significantly
-        if (file.size > 5 * 1024 * 1024) {
-            alert("Image too large. Please select an image under 5MB.");
-            return;
-        }
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            // Increased limit to 5MB, but we compress it down significantly
+            if (file.size > 5 * 1024 * 1024) {
+                alert(`"${file.name}" is too large. Please select images under 5MB.`);
+                continue;
+            }
 
-        try {
-            const compressedBase64 = await compressImage(file);
-            addImage(question.id, compressedBase64);
-        } catch (error) {
-            console.error("Image compression failed", error);
-            alert("Failed to process image. Please try another file.");
+            try {
+                const compressedBase64 = await compressImage(file);
+                addImage(question.id, compressedBase64);
+            } catch (error) {
+                console.error("Image compression failed", error);
+                alert(`Failed to process "${file.name}". Please try another file.`);
+            }
         }
 
         // Reset input
@@ -203,10 +206,11 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
 
                     <label className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors cursor-pointer">
                         <Camera size={14} />
-                        Attach Photo
+                        Attach Photos
                         <input
                             type="file"
                             accept="image/*"
+                            multiple
                             onChange={handleFileChange}
                             className="hidden"
                         />
@@ -240,6 +244,28 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                                     <Sparkles size={16} />
                                                 )}
                                             </button>
+                                        </div>
+
+                                        {/* Reorder buttons */}
+                                        <div className="absolute top-1 left-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {idx > 0 && (
+                                                <button
+                                                    onClick={() => moveImage(question.id, idx, idx - 1)}
+                                                    className="bg-background/80 hover:bg-background text-foreground rounded p-0.5 shadow-sm"
+                                                    title="Move up"
+                                                >
+                                                    <ArrowUp size={12} />
+                                                </button>
+                                            )}
+                                            {idx < (currentAnswer.images?.length || 0) - 1 && (
+                                                <button
+                                                    onClick={() => moveImage(question.id, idx, idx + 1)}
+                                                    className="bg-background/80 hover:bg-background text-foreground rounded p-0.5 shadow-sm"
+                                                    title="Move down"
+                                                >
+                                                    <ArrowDown size={12} />
+                                                </button>
+                                            )}
                                         </div>
 
                                         <button
@@ -367,6 +393,48 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                     <p className="text-muted-foreground mt-1">{question.notes}</p>
                                 </div>
                             )}
+
+                            {/* Custom Standard Input */}
+                            <div className="pt-2 mt-2 border-t border-border/50">
+                                <div className="flex gap-2 items-start">
+                                    <input
+                                        type="checkbox"
+                                        id={`${question.id}-custom`}
+                                        className="mt-1 shrink-0"
+                                        checked={currentAnswer?.selectedStandards?.some(s => s.startsWith('custom__')) || false}
+                                        onChange={(e) => {
+                                            const currentSelected = currentAnswer?.selectedStandards || [];
+                                            let newSelection;
+                                            if (e.target.checked) {
+                                                newSelection = [...currentSelected, 'custom__0'];
+                                            } else {
+                                                newSelection = currentSelected.filter(k => !k.startsWith('custom__'));
+                                            }
+                                            setAnswer(question.id, status || 'Unanswered', undefined, undefined, undefined, newSelection);
+                                        }}
+                                    />
+                                    <div className="flex-1">
+                                        <label htmlFor={`${question.id}-custom`} className="text-muted-foreground cursor-pointer text-sm block leading-relaxed font-medium">
+                                            Other / Custom Standard
+                                        </label>
+                                        {currentAnswer?.selectedStandards?.some(s => s.startsWith('custom__')) && (
+                                            <input
+                                                type="text"
+                                                placeholder="Enter custom regulation or standard..."
+                                                value={
+                                                    currentAnswer?.selectedStandards?.find(s => s.startsWith('custom__'))?.replace('custom__', '').replace(/^\d+__/, '') || ''
+                                                }
+                                                onChange={(e) => {
+                                                    const currentSelected = (currentAnswer?.selectedStandards || []).filter(k => !k.startsWith('custom__'));
+                                                    const newSelection = [...currentSelected, `custom__text__${e.target.value}`];
+                                                    setAnswer(question.id, status || 'Unanswered', undefined, undefined, undefined, newSelection);
+                                                }}
+                                                className="mt-1 w-full text-sm p-2 bg-background border rounded-md focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
