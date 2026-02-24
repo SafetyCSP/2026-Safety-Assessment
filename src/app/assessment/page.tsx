@@ -5,7 +5,7 @@ import { AssessmentProvider, useAssessment } from '@/context/AssessmentContext';
 import { CategoryList } from '@/components/CategoryList';
 import { QuestionCard } from '@/components/QuestionCard';
 import Link from 'next/link';
-import { ArrowLeft, PieChart, Save, ChevronDown, FileText, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, PieChart, Save, ChevronDown, FileText, CheckCircle, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -16,7 +16,7 @@ export default function AssessmentPage() {
 }
 
 function AssessmentLayout() {
-    const { data, answers, overallProgress } = useAssessment();
+    const { data, answers, overallProgress, completeAssessment } = useAssessment();
     const router = useRouter();
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
     const [showActions, setShowActions] = useState(false);
@@ -54,11 +54,8 @@ function AssessmentLayout() {
             setShowWarningModal(true);
         } else {
             console.log("All complete, navigating to report");
-            try {
-                router.push('/report');
-            } catch (error) {
-                console.error("Navigation failed:", error);
-            }
+            completeAssessment();
+            router.push('/report');
         }
     };
 
@@ -77,8 +74,8 @@ function AssessmentLayout() {
             {/* Header */}
             <header className="h-16 border-b flex items-center justify-between px-6 shrink-0 bg-card z-50">
                 <div className="flex items-center gap-4">
-                    <Link href="/" className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                        <ArrowLeft size={20} />
+                    <Link href="/assessments" className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="My Assessments">
+                        <FolderOpen size={20} />
                     </Link>
                     <h1 className="font-semibold text-lg tracking-tight">2026 Grainger Safety Assessment</h1>
                     <span className="text-xs px-2 py-1 bg-muted rounded text-muted-foreground font-mono">v1.1</span>
@@ -113,7 +110,7 @@ function AssessmentLayout() {
                         {showActions && (
                             <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-md shadow-lg py-1 z-50 animate-in fade-in zoom-in-95">
                                 <button
-                                    onClick={() => router.push('/report')}
+                                    onClick={() => { completeAssessment(); router.push('/report'); }}
                                     className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted flex items-center gap-2 transition-colors"
                                 >
                                     <FileText size={16} className="text-muted-foreground" />
@@ -246,7 +243,7 @@ function AssessmentLayout() {
                                 Return to Assessment
                             </button>
                             <button
-                                onClick={() => router.push('/report')}
+                                onClick={() => { completeAssessment(); router.push('/report'); }}
                                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 font-medium transition-colors"
                             >
                                 Generate Report Anyway

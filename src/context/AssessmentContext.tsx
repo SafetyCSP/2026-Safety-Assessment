@@ -1,13 +1,21 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AssessmentData, Answer, AnswerStatus, Category, RiskRating, AssessmentConfig } from '../types/standards';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AssessmentData, Answer, AnswerStatus, RiskRating, AssessmentConfig, SavedAssessment } from '../types/standards';
 import standardsData from '../data/standards.json';
+
+const STORAGE_KEY = 'ai-safety-assessments';
+const ACTIVE_ID_KEY = 'ai-safety-active-id';
+
+// Legacy keys for migration
+const LEGACY_ANSWERS_KEY = 'ai-safety-assessment-answers';
+const LEGACY_CONFIG_KEY = 'ai-safety-assessment-config';
 
 interface AssessmentContextType {
     data: AssessmentData;
     answers: Record<string, Answer>;
     config: AssessmentConfig | null;
+    currentAssessmentId: string | null;
     setConfig: (config: AssessmentConfig) => void;
     setAnswer: (questionId: string, status: AnswerStatus, notes?: string, riskRating?: RiskRating, recommendation?: string, selectedStandards?: string[]) => void;
     addImage: (questionId: string, base64: string) => void;
@@ -16,55 +24,181 @@ interface AssessmentContextType {
     getCategoryProgress: (categoryId: string) => { completed: number; total: number; percentage: number };
     overallProgress: { completed: number; total: number; percentage: number };
     resetAssessment: () => void;
+    startNewAssessment: (config: AssessmentConfig) => string;
+    loadAssessment: (id: string) => void;
+    getSavedAssessments: () => SavedAssessment[];
+    deleteAssessment: (id: string) => void;
+    completeAssessment: () => void;
 }
 
 const AssessmentContext = createContext<AssessmentContextType | undefined>(undefined);
+
+function generateId(): string {
+    return crypto.randomUUID();
+}
+
+function getAllAssessments(): SavedAssessment[] {
+    if (typeof window === 'undefined') return [];
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveAllAssessments(assessments: SavedAssessment[]) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(assessments));
+}
+
+function migrateLegacyData(): SavedAssessment | null {
+    if (typeof window === 'undefined') return null;
+    const legacyAnswers = localStorage.getItem(LEGACY_ANSWERS_KEY);
+    const legacyConfig = localStorage.getItem(LEGACY_CONFIG_KEY);
+
+    if (!legacyAnswers && !legacyConfig) return null;
+
+    try {
+        const answers = legacyAnswers ? JSON.parse(legacyAnswers) : {};
+        const config = legacyConfig ? JSON.parse(legacyConfig) : null;
+
+        if (!config) return null;
+
+        const migrated: SavedAssessment = {
+            id: generateId(),
+            config,
+            answers,
+            status: 'in-progress',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+        // Save migrated data and clean up legacy keys
+        const existing = getAllAssessments();
+        saveAllAssessments([...existing, migrated]);
+        localStorage.removeItem(LEGACY_ANSWERS_KEY);
+        localStorage.removeItem(LEGACY_CONFIG_KEY);
+
+        return migrated;
+    } catch {
+        return null;
+    }
+}
 
 export function AssessmentProvider({ children }: { children: React.ReactNode }) {
     const [data] = useState<AssessmentData>(standardsData as AssessmentData);
     const [answers, setAnswers] = useState<Record<string, Answer>>({});
     const [config, setConfigState] = useState<AssessmentConfig | null>(null);
+    const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Load from local storage
+    // Load active assessment on mount
     useEffect(() => {
-        const saved = localStorage.getItem('ai-safety-assessment-answers');
-        if (saved) {
-            try {
-                setAnswers(JSON.parse(saved));
-            } catch (e) {
-                console.error("Failed to load answers", e);
-            }
-        }
+        // Migrate legacy data if present
+        const migrated = migrateLegacyData();
 
-        const savedConfig = localStorage.getItem('ai-safety-assessment-config');
-        if (savedConfig) {
-            try {
-                setConfigState(JSON.parse(savedConfig));
-            } catch (e) {
-                console.error("Failed to load config", e);
+        const savedActiveId = localStorage.getItem(ACTIVE_ID_KEY);
+        const assessments = getAllAssessments();
+
+        // If we migrated, use the migrated assessment
+        if (migrated) {
+            setCurrentAssessmentId(migrated.id);
+            setAnswers(migrated.answers);
+            setConfigState(migrated.config);
+            localStorage.setItem(ACTIVE_ID_KEY, migrated.id);
+        }
+        // Otherwise, restore the previously active assessment
+        else if (savedActiveId) {
+            const active = assessments.find(a => a.id === savedActiveId);
+            if (active) {
+                setCurrentAssessmentId(active.id);
+                setAnswers(active.answers);
+                setConfigState(active.config);
             }
         }
 
         setIsLoaded(true);
     }, []);
 
-    // Save to local storage
+    // Auto-save current assessment whenever answers or config change
     useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('ai-safety-assessment-answers', JSON.stringify(answers));
-        }
-    }, [answers, isLoaded]);
+        if (!isLoaded || !currentAssessmentId) return;
 
-    useEffect(() => {
-        if (isLoaded) {
-            if (config) {
-                localStorage.setItem('ai-safety-assessment-config', JSON.stringify(config));
-            } else {
-                localStorage.removeItem('ai-safety-assessment-config');
-            }
+        const assessments = getAllAssessments();
+        const idx = assessments.findIndex(a => a.id === currentAssessmentId);
+
+        if (idx !== -1) {
+            assessments[idx] = {
+                ...assessments[idx],
+                answers,
+                config: config || assessments[idx].config,
+                updatedAt: Date.now(),
+            };
+            saveAllAssessments(assessments);
         }
-    }, [config, isLoaded]);
+    }, [answers, config, isLoaded, currentAssessmentId]);
+
+    const startNewAssessment = useCallback((newConfig: AssessmentConfig): string => {
+        const id = generateId();
+        const newAssessment: SavedAssessment = {
+            id,
+            config: newConfig,
+            answers: {},
+            status: 'in-progress',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+        const assessments = getAllAssessments();
+        saveAllAssessments([...assessments, newAssessment]);
+
+        setCurrentAssessmentId(id);
+        setAnswers({});
+        setConfigState(newConfig);
+        localStorage.setItem(ACTIVE_ID_KEY, id);
+
+        return id;
+    }, []);
+
+    const loadAssessment = useCallback((id: string) => {
+        const assessments = getAllAssessments();
+        const assessment = assessments.find(a => a.id === id);
+        if (!assessment) return;
+
+        setCurrentAssessmentId(id);
+        setAnswers(assessment.answers);
+        setConfigState(assessment.config);
+        localStorage.setItem(ACTIVE_ID_KEY, id);
+    }, []);
+
+    const getSavedAssessments = useCallback((): SavedAssessment[] => {
+        return getAllAssessments().sort((a, b) => b.updatedAt - a.updatedAt);
+    }, []);
+
+    const deleteAssessment = useCallback((id: string) => {
+        const assessments = getAllAssessments().filter(a => a.id !== id);
+        saveAllAssessments(assessments);
+
+        // If deleting the active assessment, clear state
+        if (id === currentAssessmentId) {
+            setCurrentAssessmentId(null);
+            setAnswers({});
+            setConfigState(null);
+            localStorage.removeItem(ACTIVE_ID_KEY);
+        }
+    }, [currentAssessmentId]);
+
+    const completeAssessment = useCallback(() => {
+        if (!currentAssessmentId) return;
+
+        const assessments = getAllAssessments();
+        const idx = assessments.findIndex(a => a.id === currentAssessmentId);
+        if (idx !== -1) {
+            assessments[idx].status = 'completed';
+            assessments[idx].updatedAt = Date.now();
+            saveAllAssessments(assessments);
+        }
+    }, [currentAssessmentId]);
 
     const setConfig = (newConfig: AssessmentConfig) => {
         setConfigState(newConfig);
@@ -97,10 +231,6 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
                 notes: '',
                 riskRating: undefined
             };
-
-            // Handle migration from string[] to AssessmentImage[] if needed
-            // If existing images are strings, we might break. But since we are dev, we can clear or checking types.
-            // For now, assuming new structure.
 
             const newImage = {
                 id: crypto.randomUUID(),
@@ -156,10 +286,11 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
     };
 
     const resetAssessment = () => {
+        // Only clears active in-memory state, does NOT delete from storage
         setAnswers({});
         setConfigState(null);
-        localStorage.removeItem('ai-safety-assessment-answers');
-        localStorage.removeItem('ai-safety-assessment-config');
+        setCurrentAssessmentId(null);
+        localStorage.removeItem(ACTIVE_ID_KEY);
     };
 
     const getCategoryProgress = (categoryId: string) => {
@@ -197,6 +328,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
             data,
             answers,
             config,
+            currentAssessmentId,
             setConfig,
             setAnswer,
             addImage,
@@ -204,7 +336,12 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
             removeImage,
             getCategoryProgress,
             overallProgress,
-            resetAssessment
+            resetAssessment,
+            startNewAssessment,
+            loadAssessment,
+            getSavedAssessments,
+            deleteAssessment,
+            completeAssessment,
         }}>
             {children}
         </AssessmentContext.Provider>

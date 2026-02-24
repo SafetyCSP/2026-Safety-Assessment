@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { StartAssessmentForm } from '@/components/StartAssessmentForm';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, FolderOpen } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -19,6 +20,13 @@ export default function Home() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Comprehensive regulatory compliance tool. Please configure the assessment details below to begin.
           </p>
+          <Link
+            href="/assessments"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors mt-2"
+          >
+            <FolderOpen size={16} />
+            My Assessments
+          </Link>
         </div>
 
         <StartAssessmentForm />
@@ -33,7 +41,7 @@ export default function Home() {
         </details>
 
         <footer className="mt-8 text-center text-sm text-muted-foreground">
-          <p>© 2026 AI Safety Compliance Tool. v1.1</p>
+          <p>&copy; 2026 AI Safety Compliance Tool. v1.1</p>
         </footer>
 
       </div>

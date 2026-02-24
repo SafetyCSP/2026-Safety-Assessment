@@ -62,3 +62,14 @@ export interface Category {
 }
 
 export type AssessmentData = Category[];
+
+export type AssessmentStatus = 'in-progress' | 'completed';
+
+export interface SavedAssessment {
+    id: string;
+    config: AssessmentConfig;
+    answers: Record<string, Answer>;
+    status: AssessmentStatus;
+    createdAt: number;
+    updatedAt: number;
+}

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 export function StartAssessmentForm() {
     const router = useRouter();
-    const { setConfig, resetAssessment } = useAssessment();
+    const { startNewAssessment } = useAssessment();
     const [isLoading, setIsLoading] = useState(false);
 
     // Form State
@@ -64,10 +64,8 @@ export function StartAssessmentForm() {
             standards: standards,
         };
 
-        // Reset previous assessment data to ensure a fresh start
-        resetAssessment();
-
-        setConfig(config);
+        // Create a new persisted assessment
+        startNewAssessment(config);
 
         // Small delay for UX
         setTimeout(() => {
