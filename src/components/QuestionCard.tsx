@@ -5,7 +5,7 @@ import { Question, AnswerStatus, RiskRating } from '@/types/standards';
 import { useAssessment } from '@/context/AssessmentContext';
 import { compressImage } from '@/lib/imageUtils';
 import { cn } from '@/lib/utils';
-import { Check, X, Minus, ChevronDown, ChevronUp, AlertCircle, Bookmark, Camera, Trash2, ShieldAlert, Sparkles, FileText, ArrowUp, ArrowDown, Plus } from 'lucide-react';
+import { Check, X, Minus, ChevronDown, ChevronUp, AlertCircle, Bookmark, Camera, Trash2, ShieldAlert, Sparkles, FileText, ArrowUp, ArrowDown, Plus, FileUp } from 'lucide-react';
 
 interface QuestionCardProps {
     question: Question;
@@ -111,17 +111,30 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            // Increased limit to 5MB, but we compress it down significantly
-            if (file.size > 5 * 1024 * 1024) {
-                alert(`"${file.name}" is too large. Please select images under 5MB.`);
+            const isPdf = file.type === 'application/pdf';
+            const maxSize = isPdf ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+
+            if (file.size > maxSize) {
+                alert(`"${file.name}" is too large. ${isPdf ? 'PDFs must be under 10MB.' : 'Images must be under 5MB.'}`);
                 continue;
             }
 
             try {
-                const compressedBase64 = await compressImage(file);
-                addImage(question.id, compressedBase64);
+                if (isPdf) {
+                    // Read PDF as data URL
+                    const base64 = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    addImage(question.id, base64, 'pdf', file.name);
+                } else {
+                    const compressedBase64 = await compressImage(file);
+                    addImage(question.id, compressedBase64, 'image', file.name);
+                }
             } catch (error) {
-                console.error("Image compression failed", error);
+                console.error("File processing failed", error);
                 alert(`Failed to process "${file.name}". Please try another file.`);
             }
         }
@@ -206,10 +219,10 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
 
                     <label className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors cursor-pointer">
                         <Camera size={14} />
-                        Attach Photos
+                        Attach Files
                         <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,.pdf,application/pdf"
                             multiple
                             onChange={handleFileChange}
                             className="hidden"
@@ -224,27 +237,47 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                             {currentAnswer.images.map((img, idx) => (
                                 <div key={img.id || idx} className="relative group bg-muted/20 p-2 rounded-lg border border-border">
                                     <div className="relative overflow-hidden rounded-md">
-                                        <img
-                                            src={img.base64}
-                                            alt={`Evidence ${idx + 1}`}
-                                            className="w-full aspect-video object-cover border border-border/50"
-                                        />
-
-                                        {/* Overlay Actions */}
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                            <button
-                                                onClick={() => handleAnalyzeImage(img.id, img.base64)}
-                                                disabled={analyzingId === img.id}
-                                                className="bg-primary/90 text-primary-foreground hover:bg-primary p-2 rounded-full shadow-lg transform hover:scale-105 transition-all"
-                                                title="Analyze with AI"
+                                        {img.fileType === 'pdf' ? (
+                                            /* PDF Thumbnail */
+                                            <a
+                                                href={img.base64}
+                                                download={img.fileName || 'document.pdf'}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-full aspect-video flex flex-col items-center justify-center bg-red-50 dark:bg-red-900/20 border border-border/50 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                                             >
-                                                {analyzingId === img.id ? (
-                                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
-                                                ) : (
-                                                    <Sparkles size={16} />
-                                                )}
-                                            </button>
-                                        </div>
+                                                <FileText size={32} className="text-red-600 dark:text-red-400 mb-2" />
+                                                <span className="text-xs font-medium text-red-700 dark:text-red-300 px-2 text-center break-all leading-tight">
+                                                    {img.fileName || 'document.pdf'}
+                                                </span>
+                                                <span className="text-[10px] text-red-500 dark:text-red-400 mt-1">Click to open / download</span>
+                                            </a>
+                                        ) : (
+                                            /* Image Thumbnail */
+                                            <img
+                                                src={img.base64}
+                                                alt={`Evidence ${idx + 1}`}
+                                                className="w-full aspect-video object-cover border border-border/50"
+                                            />
+                                        )}
+
+                                        {/* Overlay Actions (only for images) */}
+                                        {img.fileType !== 'pdf' && (
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => handleAnalyzeImage(img.id, img.base64)}
+                                                    disabled={analyzingId === img.id}
+                                                    className="bg-primary/90 text-primary-foreground hover:bg-primary p-2 rounded-full shadow-lg transform hover:scale-105 transition-all"
+                                                    title="Analyze with AI"
+                                                >
+                                                    {analyzingId === img.id ? (
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                                                    ) : (
+                                                        <Sparkles size={16} />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
 
                                         {/* Reorder buttons */}
                                         <div className="absolute top-1 left-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -271,7 +304,7 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                         <button
                                             onClick={() => removeImage(question.id, idx)}
                                             className="absolute top-1 right-1 bg-destructive/90 text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-destructive"
-                                            title="Remove image"
+                                            title="Remove"
                                         >
                                             <X size={12} />
                                         </button>

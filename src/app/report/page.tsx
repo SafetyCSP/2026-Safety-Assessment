@@ -379,20 +379,35 @@ function ReportContent() {
                                         </div>
                                     )}
 
-                                    {/* Images - Print Friendly Grid */}
+                                    {/* Evidence - Print Friendly Grid */}
                                     {item.answer.images && item.answer.images.length > 0 && (
                                         <div className="mt-4 pt-4 border-t border-border/50">
                                             <span className="font-semibold text-xs text-muted-foreground uppercase block mb-2">Evidence</span>
                                             <div className="flex gap-3 overflow-x-auto pb-2 print:flex-wrap print:overflow-visible">
                                                 {item.answer.images.map((img, i) => (
-                                                    <div key={img.id || i} className="flex flex-col gap-1 items-center">
-                                                        <img
-                                                            src={img.base64}
-                                                            className="h-24 w-auto rounded border object-contain bg-black/5"
-                                                            alt={img.caption || "Evidence"}
-                                                        />
+                                                    <div key={img.id || i} className="flex flex-col gap-1 items-center shrink-0">
+                                                        {img.fileType === 'pdf' ? (
+                                                            <a
+                                                                href={img.base64}
+                                                                download={img.fileName || 'document.pdf'}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="h-24 w-32 rounded border bg-red-50 dark:bg-red-900/20 flex flex-col items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                                            >
+                                                                <FileText size={24} className="text-red-600 dark:text-red-400 mb-1" />
+                                                                <span className="text-[10px] font-medium text-red-700 dark:text-red-300 px-1 text-center break-all leading-tight max-w-[7rem]">
+                                                                    {img.fileName || 'document.pdf'}
+                                                                </span>
+                                                            </a>
+                                                        ) : (
+                                                            <img
+                                                                src={img.base64}
+                                                                className="h-24 w-auto rounded border object-contain bg-black/5"
+                                                                alt={img.caption || "Evidence"}
+                                                            />
+                                                        )}
                                                         {img.caption && (
-                                                            <span className="text-[10px] text-muted-foreground w-24 truncate text-center block">
+                                                            <span className="text-[10px] text-muted-foreground max-w-[10rem] text-center block break-words leading-snug">
                                                                 {img.caption}
                                                             </span>
                                                         )}

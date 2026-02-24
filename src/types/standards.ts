@@ -42,6 +42,8 @@ export interface AssessmentImage {
     id: string;
     base64: string;
     caption: string;
+    fileType?: 'image' | 'pdf';
+    fileName?: string;
 }
 
 export interface Answer {
