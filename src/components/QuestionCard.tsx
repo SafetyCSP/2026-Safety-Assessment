@@ -401,36 +401,37 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                         type="checkbox"
                                         id={`${question.id}-custom`}
                                         className="mt-1 shrink-0"
-                                        checked={currentAnswer?.selectedStandards?.some(s => s.startsWith('custom__')) || false}
+                                        checked={currentAnswer?.selectedStandards?.some(s => s.startsWith('customstd:')) || false}
                                         onChange={(e) => {
                                             const currentSelected = currentAnswer?.selectedStandards || [];
                                             let newSelection;
                                             if (e.target.checked) {
-                                                newSelection = [...currentSelected, 'custom__0'];
+                                                newSelection = [...currentSelected, 'customstd:'];
                                             } else {
-                                                newSelection = currentSelected.filter(k => !k.startsWith('custom__'));
+                                                newSelection = currentSelected.filter(k => !k.startsWith('customstd:'));
                                             }
                                             setAnswer(question.id, status || 'Unanswered', undefined, undefined, undefined, newSelection);
                                         }}
                                     />
                                     <div className="flex-1">
-                                        <label htmlFor={`${question.id}-custom`} className="text-muted-foreground cursor-pointer text-sm block leading-relaxed font-medium">
-                                            Other / Custom Standard
-                                        </label>
-                                        {currentAnswer?.selectedStandards?.some(s => s.startsWith('custom__')) && (
+                                        {currentAnswer?.selectedStandards?.some(s => s.startsWith('customstd:')) ? (
                                             <input
                                                 type="text"
                                                 placeholder="Enter custom regulation or standard..."
                                                 value={
-                                                    currentAnswer?.selectedStandards?.find(s => s.startsWith('custom__'))?.replace('custom__', '').replace(/^\d+__/, '') || ''
+                                                    (currentAnswer?.selectedStandards?.find(s => s.startsWith('customstd:')) || '').substring('customstd:'.length)
                                                 }
                                                 onChange={(e) => {
-                                                    const currentSelected = (currentAnswer?.selectedStandards || []).filter(k => !k.startsWith('custom__'));
-                                                    const newSelection = [...currentSelected, `custom__text__${e.target.value}`];
+                                                    const currentSelected = (currentAnswer?.selectedStandards || []).filter(k => !k.startsWith('customstd:'));
+                                                    const newSelection = [...currentSelected, `customstd:${e.target.value}`];
                                                     setAnswer(question.id, status || 'Unanswered', undefined, undefined, undefined, newSelection);
                                                 }}
-                                                className="mt-1 w-full text-sm p-2 bg-background border rounded-md focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                                                className="w-full text-sm p-2 bg-background border rounded-md focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                                             />
+                                        ) : (
+                                            <label htmlFor={`${question.id}-custom`} className="text-muted-foreground/60 cursor-pointer text-sm block leading-relaxed italic">
+                                                Add custom standard...
+                                            </label>
                                         )}
                                     </div>
                                 </div>
