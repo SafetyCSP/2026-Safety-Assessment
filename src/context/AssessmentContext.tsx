@@ -18,7 +18,7 @@ interface AssessmentContextType {
     currentAssessmentId: string | null;
     setConfig: (config: AssessmentConfig) => void;
     setAnswer: (questionId: string, status: AnswerStatus, notes?: string, riskRating?: RiskRating, recommendation?: string, selectedStandards?: string[]) => void;
-    addImage: (questionId: string, base64: string, fileType?: 'image' | 'pdf', fileName?: string) => void;
+    addImage: (questionId: string, base64: string, fileType?: 'image' | 'pdf', fileName?: string, thumbnail?: string) => void;
     updateImageCaption: (questionId: string, imageId: string, caption: string) => void;
     removeImage: (questionId: string, index: number) => void;
     moveImage: (questionId: string, fromIndex: number, toIndex: number) => void;
@@ -228,7 +228,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
         }));
     };
 
-    const addImage = (questionId: string, base64: string, fileType?: 'image' | 'pdf', fileName?: string) => {
+    const addImage = (questionId: string, base64: string, fileType?: 'image' | 'pdf', fileName?: string, thumbnail?: string) => {
         setAnswers(prev => {
             const current = prev[questionId] || {
                 questionId,
@@ -244,7 +244,8 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
                 base64,
                 caption: '',
                 fileType: fileType || 'image',
-                fileName: fileName || ''
+                fileName: fileName || '',
+                thumbnail: thumbnail || ''
             };
 
             return {

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Question, AnswerStatus, RiskRating } from '@/types/standards';
 import { useAssessment } from '@/context/AssessmentContext';
 import { compressImage } from '@/lib/imageUtils';
+import { generatePdfThumbnail } from '@/lib/pdfUtils';
 import { cn } from '@/lib/utils';
 import { Check, X, Minus, ChevronDown, ChevronUp, AlertCircle, Bookmark, Camera, Trash2, ShieldAlert, Sparkles, FileText, ArrowUp, ArrowDown, Plus, FileUp } from 'lucide-react';
 
@@ -128,7 +129,14 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
-                    addImage(question.id, base64, 'pdf', file.name);
+                    // Generate thumbnail from first page
+                    let thumbnail = '';
+                    try {
+                        thumbnail = await generatePdfThumbnail(base64);
+                    } catch (thumbErr) {
+                        console.warn('Could not generate PDF thumbnail:', thumbErr);
+                    }
+                    addImage(question.id, base64, 'pdf', file.name, thumbnail);
                 } else {
                     const compressedBase64 = await compressImage(file);
                     addImage(question.id, compressedBase64, 'image', file.name);
@@ -238,19 +246,29 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                 <div key={img.id || idx} className="relative group bg-muted/20 p-2 rounded-lg border border-border">
                                     <div className="relative overflow-hidden rounded-md">
                                         {img.fileType === 'pdf' ? (
-                                            /* PDF Thumbnail */
+                                            /* PDF Thumbnail — show rendered first page if available */
                                             <a
                                                 href={img.base64}
                                                 download={img.fileName || 'document.pdf'}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="w-full aspect-video flex flex-col items-center justify-center bg-red-50 dark:bg-red-900/20 border border-border/50 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                                className="block w-full aspect-video relative border border-border/50 hover:opacity-90 transition-opacity"
                                             >
-                                                <FileText size={32} className="text-red-600 dark:text-red-400 mb-2" />
-                                                <span className="text-xs font-medium text-red-700 dark:text-red-300 px-2 text-center break-all leading-tight">
-                                                    {img.fileName || 'document.pdf'}
-                                                </span>
-                                                <span className="text-[10px] text-red-500 dark:text-red-400 mt-1">Click to open / download</span>
+                                                {img.thumbnail ? (
+                                                    <img
+                                                        src={img.thumbnail}
+                                                        alt={img.fileName || 'PDF preview'}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 dark:bg-red-900/20">
+                                                        <FileText size={32} className="text-red-600 dark:text-red-400 mb-2" />
+                                                    </div>
+                                                )}
+                                                <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1 flex items-center gap-1">
+                                                    <FileText size={12} className="text-white shrink-0" />
+                                                    <span className="text-[10px] text-white truncate">{img.fileName || 'document.pdf'}</span>
+                                                </div>
                                             </a>
                                         ) : (
                                             /* Image Thumbnail */

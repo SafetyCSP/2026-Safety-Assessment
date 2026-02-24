@@ -392,12 +392,23 @@ function ReportContent() {
                                                                 download={img.fileName || 'document.pdf'}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="h-24 w-32 rounded border bg-red-50 dark:bg-red-900/20 flex flex-col items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                                                className="relative h-24 w-32 rounded border overflow-hidden block hover:opacity-90 transition-opacity"
                                                             >
-                                                                <FileText size={24} className="text-red-600 dark:text-red-400 mb-1" />
-                                                                <span className="text-[10px] font-medium text-red-700 dark:text-red-300 px-1 text-center break-all leading-tight max-w-[7rem]">
-                                                                    {img.fileName || 'document.pdf'}
-                                                                </span>
+                                                                {img.thumbnail ? (
+                                                                    <img
+                                                                        src={img.thumbnail}
+                                                                        alt={img.fileName || 'PDF preview'}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 dark:bg-red-900/20">
+                                                                        <FileText size={24} className="text-red-600 dark:text-red-400" />
+                                                                    </div>
+                                                                )}
+                                                                <div className="absolute bottom-0 inset-x-0 bg-black/60 px-1 py-0.5 flex items-center gap-1">
+                                                                    <FileText size={10} className="text-white shrink-0" />
+                                                                    <span className="text-[9px] text-white truncate">{img.fileName || 'document.pdf'}</span>
+                                                                </div>
                                                             </a>
                                                         ) : (
                                                             <img

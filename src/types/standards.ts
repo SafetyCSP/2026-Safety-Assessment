@@ -44,6 +44,7 @@ export interface AssessmentImage {
     caption: string;
     fileType?: 'image' | 'pdf';
     fileName?: string;
+    thumbnail?: string;
 }
 
 export interface Answer {
