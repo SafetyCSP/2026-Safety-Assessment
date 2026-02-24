@@ -54,10 +54,19 @@ function saveAllAssessments(assessments: SavedAssessment[]) {
 
 function migrateLegacyData(): SavedAssessment | null {
     if (typeof window === 'undefined') return null;
+
+    // Prevent double-migration (React StrictMode can re-run effects)
+    if (localStorage.getItem('ai-safety-migration-done')) return null;
+
     const legacyAnswers = localStorage.getItem(LEGACY_ANSWERS_KEY);
     const legacyConfig = localStorage.getItem(LEGACY_CONFIG_KEY);
 
     if (!legacyAnswers && !legacyConfig) return null;
+
+    // Remove legacy keys immediately to prevent race conditions
+    localStorage.removeItem(LEGACY_ANSWERS_KEY);
+    localStorage.removeItem(LEGACY_CONFIG_KEY);
+    localStorage.setItem('ai-safety-migration-done', '1');
 
     try {
         const answers = legacyAnswers ? JSON.parse(legacyAnswers) : {};
@@ -74,11 +83,8 @@ function migrateLegacyData(): SavedAssessment | null {
             updatedAt: Date.now(),
         };
 
-        // Save migrated data and clean up legacy keys
         const existing = getAllAssessments();
         saveAllAssessments([...existing, migrated]);
-        localStorage.removeItem(LEGACY_ANSWERS_KEY);
-        localStorage.removeItem(LEGACY_CONFIG_KEY);
 
         return migrated;
     } catch {
