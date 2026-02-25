@@ -250,13 +250,18 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                             <div
                                                 role="button"
                                                 tabIndex={0}
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     const byteString = atob(img.base64.split(',')[1]);
                                                     const ab = new ArrayBuffer(byteString.length);
                                                     const ia = new Uint8Array(ab);
                                                     for (let j = 0; j < byteString.length; j++) ia[j] = byteString.charCodeAt(j);
                                                     const blob = new Blob([ab], { type: 'application/pdf' });
-                                                    window.open(URL.createObjectURL(blob), '_blank');
+                                                    const blobUrl = URL.createObjectURL(blob);
+                                                    const newWin = window.open('', '_blank');
+                                                    if (newWin) {
+                                                        newWin.location.href = blobUrl;
+                                                    }
                                                 }}
                                                 className="block w-full aspect-video relative border border-border/50 hover:opacity-90 transition-opacity cursor-pointer"
                                             >
