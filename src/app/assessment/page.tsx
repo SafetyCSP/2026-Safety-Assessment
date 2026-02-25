@@ -5,7 +5,7 @@ import { AssessmentProvider, useAssessment } from '@/context/AssessmentContext';
 import { CategoryList } from '@/components/CategoryList';
 import { QuestionCard } from '@/components/QuestionCard';
 import Link from 'next/link';
-import { ArrowLeft, PieChart, Save, ChevronDown, FileText, CheckCircle, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
+import { ArrowLeft, PieChart, Save, ChevronDown, ChevronRight as ChevronRightIcon, FileText, CheckCircle, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -23,6 +23,19 @@ function AssessmentLayout() {
     const [showWarningModal, setShowWarningModal] = useState(false);
     const [incompleteCount, setIncompleteCount] = useState(0);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+    const toggleCategory = (categoryId: string) => {
+        setExpandedCategories(prev => {
+            const next = new Set(prev);
+            if (next.has(categoryId)) {
+                next.delete(categoryId);
+            } else {
+                next.add(categoryId);
+            }
+            return next;
+        });
+    };
 
     const handleComplete = () => {
         console.log("handleComplete called - Starting completion process");
@@ -173,23 +186,48 @@ function AssessmentLayout() {
                                     </p>
                                 </div>
 
-                                {data.map(category => (
-                                    <section key={category.id} id={`cat-${category.id}`} className="space-y-6">
-                                        <div className="flex items-center gap-3 py-4 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur z-10">
-                                            <div className="w-1 h-8 bg-primary rounded-full" />
-                                            <img src="/grainger-g.png" alt="Grainger" className="h-8 w-auto" />
-                                            <h3 className="text-xl font-bold tracking-tight">{category.title}</h3>
-                                        </div>
+                                {data.map(category => {
+                                    const isExpanded = expandedCategories.has(category.id);
+                                    const catProgress = category.questions.filter(q => answers[q.id] && answers[q.id].status !== 'Unanswered').length;
+                                    const catTotal = category.questions.length;
+                                    return (
+                                        <section key={category.id} id={`cat-${category.id}`} className="space-y-0">
+                                            <button
+                                                onClick={() => toggleCategory(category.id)}
+                                                className="w-full flex items-center gap-3 py-4 px-2 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur z-10 hover:bg-muted/50 transition-colors rounded-t-lg cursor-pointer group"
+                                            >
+                                                <div className="shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
+                                                    {isExpanded ? <ChevronDown size={20} /> : <ChevronRightIcon size={20} />}
+                                                </div>
+                                                <div className="w-1 h-8 bg-primary rounded-full" />
+                                                <img src="/grainger-g.png" alt="Grainger" className="h-8 w-auto" />
+                                                <h3 className="text-xl font-bold tracking-tight text-left flex-1">{category.title}</h3>
+                                                <span className={cn(
+                                                    "text-xs font-medium px-2.5 py-1 rounded-full",
+                                                    catProgress === catTotal && catTotal > 0
+                                                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                                        : catProgress > 0
+                                                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                                            : "bg-muted text-muted-foreground"
+                                                )}>
+                                                    {catProgress}/{catTotal}
+                                                </span>
+                                            </button>
 
-                                        {category.questions.map(q => (
-                                            <QuestionCard
-                                                key={q.id}
-                                                question={q}
-                                                categoryId={category.id}
-                                            />
-                                        ))}
-                                    </section>
-                                ))}
+                                            {isExpanded && (
+                                                <div className="space-y-6 pt-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                    {category.questions.map(q => (
+                                                        <QuestionCard
+                                                            key={q.id}
+                                                            question={q}
+                                                            categoryId={category.id}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </section>
+                                    );
+                                })}
                             </div>
                         ) : activeCategory ? (
                             <>
