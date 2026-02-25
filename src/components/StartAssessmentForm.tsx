@@ -15,6 +15,9 @@ export function StartAssessmentForm() {
     // Form State
     const [assessorName, setAssessorName] = useState('');
     const [assessorDate, setAssessorDate] = useState(new Date().toISOString().split('T')[0]);
+    const [region, setRegion] = useState('');
+
+    const REGIONS = ['Central', 'Southeast', 'Southwest', 'Northeast'];
 
     const [amName, setAmName] = useState('');
     const [amEmail, setAmEmail] = useState('');
@@ -47,6 +50,7 @@ export function StartAssessmentForm() {
             assessor: {
                 name: assessorName,
                 date: assessorDate,
+                region: region,
             },
             accountManager: {
                 name: amName,
@@ -80,7 +84,7 @@ export function StartAssessmentForm() {
 
             {/* 1. Assessor Info */}
             <Section title="Assessor Information" icon={<User size={18} />}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input
                         label="Assessor Name"
                         value={assessorName}
@@ -95,6 +99,20 @@ export function StartAssessmentForm() {
                         onChange={setAssessorDate}
                         required
                     />
+                    <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1.5">Region</label>
+                        <select
+                            title="Select Region"
+                            value={region}
+                            onChange={(e) => setRegion(e.target.value)}
+                            className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                        >
+                            <option value="">Select a region...</option>
+                            {REGIONS.map((r) => (
+                                <option key={r} value={r}>{r}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </Section>
 

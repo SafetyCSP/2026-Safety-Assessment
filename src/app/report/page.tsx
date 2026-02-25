@@ -209,6 +209,7 @@ function ReportContent() {
                                     <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider border-b pb-1 mb-2">Assessor</h4>
                                     <div className="font-medium">{config.assessor.name}</div>
                                     <div className="text-muted-foreground">Date: {config.assessor.date}</div>
+                                    {config.assessor.region && <div className="text-muted-foreground">Region: {config.assessor.region}</div>}
                                 </div>
 
                                 <div className="space-y-1">

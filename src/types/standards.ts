@@ -2,6 +2,7 @@ export interface AssessmentConfig {
     assessor: {
         name: string;
         date: string;
+        region?: string;
     };
     accountManager: {
         name: string;
