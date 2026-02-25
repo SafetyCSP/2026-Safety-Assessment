@@ -252,15 +252,18 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                                 tabIndex={0}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    e.preventDefault();
                                                     const byteString = atob(img.base64.split(',')[1]);
                                                     const ab = new ArrayBuffer(byteString.length);
                                                     const ia = new Uint8Array(ab);
                                                     for (let j = 0; j < byteString.length; j++) ia[j] = byteString.charCodeAt(j);
                                                     const blob = new Blob([ab], { type: 'application/pdf' });
                                                     const blobUrl = URL.createObjectURL(blob);
-                                                    const newWin = window.open('', '_blank');
-                                                    if (newWin) {
-                                                        newWin.location.href = blobUrl;
+                                                    const viewer = window.open('about:blank', '_blank');
+                                                    if (viewer) {
+                                                        viewer.document.title = img.fileName || 'PDF Document';
+                                                        viewer.document.body.style.margin = '0';
+                                                        viewer.document.body.innerHTML = `<embed src="${blobUrl}" type="application/pdf" style="width:100%;height:100vh;">`;
                                                     }
                                                 }}
                                                 className="block w-full aspect-video relative border border-border/50 hover:opacity-90 transition-opacity cursor-pointer"
