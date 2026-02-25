@@ -247,11 +247,10 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                     <div className="relative overflow-hidden rounded-md">
                                         {img.fileType === 'pdf' ? (
                                             /* PDF Thumbnail — show rendered first page if available */
-                                            <a
-                                                href="#"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    // Convert data URL to Blob and open in new tab
+                                            <div
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => {
                                                     const byteString = atob(img.base64.split(',')[1]);
                                                     const ab = new ArrayBuffer(byteString.length);
                                                     const ia = new Uint8Array(ab);
@@ -276,7 +275,7 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                                     <FileText size={12} className="text-white shrink-0" />
                                                     <span className="text-[10px] text-white truncate">{img.fileName || 'document.pdf'}</span>
                                                 </div>
-                                            </a>
+                                            </div>
                                         ) : (
                                             /* Image Thumbnail */
                                             <img

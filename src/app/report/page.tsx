@@ -387,10 +387,10 @@ function ReportContent() {
                                                 {item.answer.images.map((img, i) => (
                                                     <div key={img.id || i} className="flex flex-col gap-1 items-center shrink-0">
                                                         {img.fileType === 'pdf' ? (
-                                                            <a
-                                                                href="#"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
+                                                            <div
+                                                                role="button"
+                                                                tabIndex={0}
+                                                                onClick={() => {
                                                                     const byteString = atob(img.base64.split(',')[1]);
                                                                     const ab = new ArrayBuffer(byteString.length);
                                                                     const ia = new Uint8Array(ab);
@@ -415,7 +415,7 @@ function ReportContent() {
                                                                     <FileText size={10} className="text-white shrink-0" />
                                                                     <span className="text-[9px] text-white truncate">{img.fileName || 'document.pdf'}</span>
                                                                 </div>
-                                                            </a>
+                                                            </div>
                                                         ) : (
                                                             <img
                                                                 src={img.base64}
