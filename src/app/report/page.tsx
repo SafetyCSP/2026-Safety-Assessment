@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AssessmentProvider, useAssessment } from '@/context/AssessmentContext';
 import { calculateStats, generateCSV } from '@/lib/reportUtils';
+import { formatTextToHtml } from '@/lib/formatText';
 import { ArrowLeft, Printer, ShieldAlert, CheckCircle2, AlertTriangle, AlertOctagon, XCircle, RefreshCw, FileText, Download, FileSpreadsheet, File, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RiskRating } from '@/types/standards';
@@ -369,14 +370,14 @@ function ReportContent() {
                                     {item.answer.notes && (
                                         <div className="mt-3 bg-muted/30 p-3 rounded text-sm print:bg-gray-50">
                                             <span className="font-semibold text-xs text-muted-foreground uppercase block mb-1">Findings / Observations</span>
-                                            {item.answer.notes}
+                                            <div dangerouslySetInnerHTML={{ __html: formatTextToHtml(item.answer.notes) }} />
                                         </div>
                                     )}
 
                                     {item.answer.recommendation && (
                                         <div className="mt-3 bg-blue-50/50 p-3 rounded text-sm border border-blue-100/50 print:bg-gray-50">
                                             <span className="font-semibold text-xs text-blue-700/80 uppercase block mb-1">Recommendations / Mitigation</span>
-                                            {item.answer.recommendation}
+                                            <div dangerouslySetInnerHTML={{ __html: formatTextToHtml(item.answer.recommendation) }} />
                                         </div>
                                     )}
 

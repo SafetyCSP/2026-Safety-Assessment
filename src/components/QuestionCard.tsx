@@ -5,6 +5,7 @@ import { Question, AnswerStatus, RiskRating } from '@/types/standards';
 import { useAssessment } from '@/context/AssessmentContext';
 import { compressImage } from '@/lib/imageUtils';
 import { generatePdfThumbnail } from '@/lib/pdfUtils';
+import { FormattedTextarea } from '@/components/FormattedTextarea';
 import { cn } from '@/lib/utils';
 import { Check, X, Minus, ChevronDown, ChevronUp, AlertCircle, Bookmark, Camera, Trash2, ShieldAlert, Sparkles, FileText, ArrowUp, ArrowDown, Plus, FileUp } from 'lucide-react';
 
@@ -510,20 +511,18 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                     <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2">
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase text-muted-foreground">Findings / Observations</label>
-                            <textarea
-                                className="w-full min-h-[80px] p-3 rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-sm resize-y dark:bg-[#222] dark:border-[#444]"
-                                placeholder="Describe the compliance gap or hazard..."
+                            <FormattedTextarea
                                 value={currentAnswer?.notes || ''}
-                                onChange={handleNotesChange}
+                                onChange={(val) => setAnswer(question.id, status || 'Unanswered', val)}
+                                placeholder="Describe the compliance gap or hazard..."
                             />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase text-muted-foreground">Recommendations / Mitigation</label>
-                            <textarea
-                                className="w-full min-h-[80px] p-3 rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-sm resize-y dark:bg-[#222] dark:border-[#444]"
-                                placeholder="Enter recommendations for mitigation..."
+                            <FormattedTextarea
                                 value={currentAnswer?.recommendation || ''}
-                                onChange={(e) => setAnswer(question.id, status || 'Unanswered', undefined, undefined, e.target.value)}
+                                onChange={(val) => setAnswer(question.id, status || 'Unanswered', undefined, undefined, val)}
+                                placeholder="Enter recommendations for mitigation..."
                             />
                         </div>
                     </div>
