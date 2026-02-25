@@ -388,11 +388,17 @@ function ReportContent() {
                                                     <div key={img.id || i} className="flex flex-col gap-1 items-center shrink-0">
                                                         {img.fileType === 'pdf' ? (
                                                             <a
-                                                                href={img.base64}
-                                                                download={img.fileName || 'document.pdf'}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="relative h-24 w-32 rounded border overflow-hidden block hover:opacity-90 transition-opacity"
+                                                                href="#"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    const byteString = atob(img.base64.split(',')[1]);
+                                                                    const ab = new ArrayBuffer(byteString.length);
+                                                                    const ia = new Uint8Array(ab);
+                                                                    for (let j = 0; j < byteString.length; j++) ia[j] = byteString.charCodeAt(j);
+                                                                    const blob = new Blob([ab], { type: 'application/pdf' });
+                                                                    window.open(URL.createObjectURL(blob), '_blank');
+                                                                }}
+                                                                className="relative h-24 w-32 rounded border overflow-hidden block hover:opacity-90 transition-opacity cursor-pointer"
                                                             >
                                                                 {img.thumbnail ? (
                                                                     <img

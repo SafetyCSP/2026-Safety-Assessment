@@ -134,7 +134,7 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                     try {
                         thumbnail = await generatePdfThumbnail(base64);
                     } catch (thumbErr) {
-                        console.warn('Could not generate PDF thumbnail:', thumbErr);
+                        console.error('PDF thumbnail generation failed:', thumbErr);
                     }
                     addImage(question.id, base64, 'pdf', file.name, thumbnail);
                 } else {
@@ -248,11 +248,18 @@ export function QuestionCard({ question, categoryId }: QuestionCardProps) {
                                         {img.fileType === 'pdf' ? (
                                             /* PDF Thumbnail — show rendered first page if available */
                                             <a
-                                                href={img.base64}
-                                                download={img.fileName || 'document.pdf'}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="block w-full aspect-video relative border border-border/50 hover:opacity-90 transition-opacity"
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    // Convert data URL to Blob and open in new tab
+                                                    const byteString = atob(img.base64.split(',')[1]);
+                                                    const ab = new ArrayBuffer(byteString.length);
+                                                    const ia = new Uint8Array(ab);
+                                                    for (let j = 0; j < byteString.length; j++) ia[j] = byteString.charCodeAt(j);
+                                                    const blob = new Blob([ab], { type: 'application/pdf' });
+                                                    window.open(URL.createObjectURL(blob), '_blank');
+                                                }}
+                                                className="block w-full aspect-video relative border border-border/50 hover:opacity-90 transition-opacity cursor-pointer"
                                             >
                                                 {img.thumbnail ? (
                                                     <img
