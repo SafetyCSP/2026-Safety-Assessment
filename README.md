@@ -71,3 +71,19 @@ Set the `GOOGLE_GENERATIVE_AI_API_KEY` environment variable in your Vercel proje
 ## License
 
 Private — © 2026 AI Safety Compliance Tool
+
+## Deployment Readiness Checks
+
+```bash
+npm run validate:env
+npm run typecheck
+```
+
+For production deployment with all AI features enabled:
+
+```bash
+npm run validate:env:strict
+npm run build
+```
+
+Power Apps deployment steps are documented in `POWER_APPS_DEPLOYMENT.md`.

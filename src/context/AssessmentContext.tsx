@@ -1,29 +1,39 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { AssessmentData, Answer, AnswerStatus, RiskRating, AssessmentConfig, SavedAssessment } from '../types/standards';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { AssessmentData, Answer, AnswerStatus, AssessmentConfig, SavedAssessment } from '../types/standards';
 import standardsData from '../data/standards.json';
 
 const STORAGE_KEY = 'ai-safety-assessments';
 const ACTIVE_ID_KEY = 'ai-safety-active-id';
+const STANDARDS_STORAGE_KEY = 'ai-safety-standards-data';
+const ACTIVE_SESSION_KEY = 'ai-safety-active-session';
 
-// Legacy keys for migration
 const LEGACY_ANSWERS_KEY = 'ai-safety-assessment-answers';
 const LEGACY_CONFIG_KEY = 'ai-safety-assessment-config';
+
+interface InitialSession {
+    answers: Record<string, Answer>;
+    config: AssessmentConfig | null;
+    currentAssessmentId: string | null;
+}
 
 interface AssessmentContextType {
     data: AssessmentData;
     answers: Record<string, Answer>;
     config: AssessmentConfig | null;
     currentAssessmentId: string | null;
+    totalQuestionCount: number;
     setConfig: (config: AssessmentConfig) => void;
-    setAnswer: (questionId: string, status: AnswerStatus, notes?: string, riskRating?: RiskRating, recommendation?: string, selectedStandards?: string[]) => void;
+    setAnswer: (questionId: string, updates: Partial<Omit<Answer, 'questionId' | 'timestamp'>>) => void;
     addImage: (questionId: string, base64: string, fileType?: 'image' | 'pdf', fileName?: string, thumbnail?: string) => void;
     updateImageCaption: (questionId: string, imageId: string, caption: string) => void;
     removeImage: (questionId: string, index: number) => void;
     moveImage: (questionId: string, fromIndex: number, toIndex: number) => void;
     getCategoryProgress: (categoryId: string) => { completed: number; total: number; percentage: number };
     overallProgress: { completed: number; total: number; percentage: number };
+    updateStandardsData: (nextData: AssessmentData) => void;
+    resetStandardsData: () => void;
     resetAssessment: () => void;
     startNewAssessment: (config: AssessmentConfig) => string;
     loadAssessment: (id: string) => void;
@@ -49,13 +59,34 @@ function getAllAssessments(): SavedAssessment[] {
 }
 
 function saveAllAssessments(assessments: SavedAssessment[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(assessments));
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(assessments));
+    } catch (error) {
+        console.error('Failed to persist assessments to local storage.', error);
+    }
+}
+
+function loadStandardsFromStorage(): AssessmentData {
+    if (typeof window === 'undefined') return standardsData as AssessmentData;
+
+    try {
+        const stored = localStorage.getItem(STANDARDS_STORAGE_KEY);
+        if (!stored) return standardsData as AssessmentData;
+
+        const parsed = JSON.parse(stored) as AssessmentData;
+        return Array.isArray(parsed) ? parsed : (standardsData as AssessmentData);
+    } catch {
+        return standardsData as AssessmentData;
+    }
+}
+
+function saveStandardsToStorage(nextData: AssessmentData) {
+    localStorage.setItem(STANDARDS_STORAGE_KEY, JSON.stringify(nextData));
 }
 
 function migrateLegacyData(): SavedAssessment | null {
     if (typeof window === 'undefined') return null;
 
-    // Prevent double-migration (React StrictMode can re-run effects)
     if (localStorage.getItem('ai-safety-migration-done')) return null;
 
     const legacyAnswers = localStorage.getItem(LEGACY_ANSWERS_KEY);
@@ -63,7 +94,6 @@ function migrateLegacyData(): SavedAssessment | null {
 
     if (!legacyAnswers && !legacyConfig) return null;
 
-    // Remove legacy keys immediately to prevent race conditions
     localStorage.removeItem(LEGACY_ANSWERS_KEY);
     localStorage.removeItem(LEGACY_CONFIG_KEY);
     localStorage.setItem('ai-safety-migration-done', '1');
@@ -92,47 +122,87 @@ function migrateLegacyData(): SavedAssessment | null {
     }
 }
 
+function resolveInitialSession(): InitialSession {
+    if (typeof window === 'undefined') {
+        return { answers: {}, config: null, currentAssessmentId: null };
+    }
+
+    try {
+        const sessionRaw = localStorage.getItem(ACTIVE_SESSION_KEY);
+        if (sessionRaw) {
+            const parsed = JSON.parse(sessionRaw) as Partial<InitialSession>;
+            const restored: InitialSession = {
+                answers: parsed.answers && typeof parsed.answers === 'object' ? (parsed.answers as Record<string, Answer>) : {},
+                config: parsed.config || null,
+                currentAssessmentId: typeof parsed.currentAssessmentId === 'string' ? parsed.currentAssessmentId : null,
+            };
+
+            if (restored.config || restored.currentAssessmentId || Object.keys(restored.answers).length > 0) {
+                return restored;
+            }
+        }
+    } catch {
+        // Continue to legacy/saved assessment recovery.
+    }
+
+    const migrated = migrateLegacyData();
+    const savedActiveId = localStorage.getItem(ACTIVE_ID_KEY);
+    const assessments = getAllAssessments();
+
+    if (migrated) {
+        localStorage.setItem(ACTIVE_ID_KEY, migrated.id);
+        return {
+            answers: migrated.answers,
+            config: migrated.config,
+            currentAssessmentId: migrated.id,
+        };
+    }
+
+    if (savedActiveId) {
+        const active = assessments.find((assessment) => assessment.id === savedActiveId);
+        if (active) {
+            return {
+                answers: active.answers,
+                config: active.config,
+                currentAssessmentId: active.id,
+            };
+        }
+    }
+
+    const fallback = assessments.find((assessment) => assessment.status === 'in-progress') || assessments[0];
+    if (fallback) {
+        return {
+            answers: fallback.answers,
+            config: fallback.config,
+            currentAssessmentId: fallback.id,
+        };
+    }
+
+    return { answers: {}, config: null, currentAssessmentId: null };
+}
+
 export function AssessmentProvider({ children }: { children: React.ReactNode }) {
-    const [data] = useState<AssessmentData>(standardsData as AssessmentData);
+    const [data, setData] = useState<AssessmentData>(standardsData as AssessmentData);
     const [answers, setAnswers] = useState<Record<string, Answer>>({});
     const [config, setConfigState] = useState<AssessmentConfig | null>(null);
     const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isBootstrapped, setIsBootstrapped] = useState(false);
 
-    // Load active assessment on mount
     useEffect(() => {
-        // Migrate legacy data if present
-        const migrated = migrateLegacyData();
+        setData(loadStandardsFromStorage());
 
-        const savedActiveId = localStorage.getItem(ACTIVE_ID_KEY);
-        const assessments = getAllAssessments();
-
-        // If we migrated, use the migrated assessment
-        if (migrated) {
-            setCurrentAssessmentId(migrated.id);
-            setAnswers(migrated.answers);
-            setConfigState(migrated.config);
-            localStorage.setItem(ACTIVE_ID_KEY, migrated.id);
-        }
-        // Otherwise, restore the previously active assessment
-        else if (savedActiveId) {
-            const active = assessments.find(a => a.id === savedActiveId);
-            if (active) {
-                setCurrentAssessmentId(active.id);
-                setAnswers(active.answers);
-                setConfigState(active.config);
-            }
-        }
-
-        setIsLoaded(true);
+        const initialSession = resolveInitialSession();
+        setAnswers(initialSession.answers);
+        setConfigState(initialSession.config);
+        setCurrentAssessmentId(initialSession.currentAssessmentId);
+        setIsBootstrapped(true);
     }, []);
 
-    // Auto-save current assessment whenever answers or config change
     useEffect(() => {
-        if (!isLoaded || !currentAssessmentId) return;
+        if (!isBootstrapped || !currentAssessmentId) return;
 
         const assessments = getAllAssessments();
-        const idx = assessments.findIndex(a => a.id === currentAssessmentId);
+        const idx = assessments.findIndex((assessment) => assessment.id === currentAssessmentId);
 
         if (idx !== -1) {
             assessments[idx] = {
@@ -143,7 +213,48 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
             };
             saveAllAssessments(assessments);
         }
-    }, [answers, config, isLoaded, currentAssessmentId]);
+    }, [answers, config, currentAssessmentId, isBootstrapped]);
+
+
+    useEffect(() => {
+        if (!isBootstrapped) return;
+
+        try {
+            localStorage.setItem(
+                ACTIVE_SESSION_KEY,
+                JSON.stringify({
+                    answers,
+                    config,
+                    currentAssessmentId,
+                })
+            );
+        } catch (error) {
+            console.error('Failed to persist active assessment session.', error);
+        }
+    }, [answers, config, currentAssessmentId, isBootstrapped]);
+
+    useEffect(() => {
+        if (!isBootstrapped || config) return;
+
+        const assessments = getAllAssessments();
+        if (assessments.length === 0) return;
+
+        const savedActiveId = localStorage.getItem(ACTIVE_ID_KEY);
+        const targetId = currentAssessmentId || savedActiveId;
+        const fallback = assessments.find((assessment) => assessment.status === 'in-progress') || assessments[0];
+        const candidate = (targetId ? assessments.find((assessment) => assessment.id === targetId) : undefined) || fallback;
+
+        if (!candidate) return;
+
+        setCurrentAssessmentId(candidate.id);
+        setConfigState(candidate.config);
+        if (Object.keys(answers).length === 0) {
+            setAnswers(candidate.answers || {});
+        }
+        localStorage.setItem(ACTIVE_ID_KEY, candidate.id);
+    }, [answers, config, currentAssessmentId, isBootstrapped]);
+
+    const totalQuestionCount = useMemo(() => data.reduce((sum, category) => sum + category.questions.length, 0), [data]);
 
     const startNewAssessment = useCallback((newConfig: AssessmentConfig): string => {
         const id = generateId();
@@ -169,7 +280,7 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
 
     const loadAssessment = useCallback((id: string) => {
         const assessments = getAllAssessments();
-        const assessment = assessments.find(a => a.id === id);
+        const assessment = assessments.find((item) => item.id === id);
         if (!assessment) return;
 
         setCurrentAssessmentId(id);
@@ -183,15 +294,15 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
     }, []);
 
     const deleteAssessment = useCallback((id: string) => {
-        const assessments = getAllAssessments().filter(a => a.id !== id);
+        const assessments = getAllAssessments().filter((assessment) => assessment.id !== id);
         saveAllAssessments(assessments);
 
-        // If deleting the active assessment, clear state
         if (id === currentAssessmentId) {
             setCurrentAssessmentId(null);
             setAnswers({});
             setConfigState(null);
             localStorage.removeItem(ACTIVE_ID_KEY);
+            localStorage.removeItem(ACTIVE_SESSION_KEY);
         }
     }, [currentAssessmentId]);
 
@@ -199,7 +310,8 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
         if (!currentAssessmentId) return;
 
         const assessments = getAllAssessments();
-        const idx = assessments.findIndex(a => a.id === currentAssessmentId);
+        const idx = assessments.findIndex((assessment) => assessment.id === currentAssessmentId);
+
         if (idx !== -1) {
             assessments[idx].status = 'completed';
             assessments[idx].updatedAt = Date.now();
@@ -211,32 +323,54 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
         setConfigState(newConfig);
     };
 
-    const setAnswer = (questionId: string, status: AnswerStatus, notes?: string, riskRating?: RiskRating, recommendation?: string, selectedStandards?: string[]) => {
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: {
-                ...prev[questionId],
+    const setAnswer = (questionId: string, updates: Partial<Omit<Answer, 'questionId' | 'timestamp'>>) => {
+        setAnswers((prev) => {
+            const current = prev[questionId] || {
                 questionId,
-                status,
-                notes: notes ?? prev[questionId]?.notes,
-                recommendation: recommendation ?? prev[questionId]?.recommendation,
-                selectedStandards: selectedStandards ?? prev[questionId]?.selectedStandards,
-                riskRating: riskRating ?? prev[questionId]?.riskRating,
-                images: prev[questionId]?.images || [],
-                timestamp: Date.now()
+                status: 'Unanswered' as AnswerStatus,
+                images: [],
+                selectedStandards: [],
+                timestamp: Date.now(),
+            };
+
+            const next: Answer = {
+                ...current,
+                ...updates,
+                questionId,
+                images: updates.images ?? current.images ?? [],
+                selectedStandards: updates.selectedStandards ?? current.selectedStandards,
+                timestamp: Date.now(),
+            };
+
+            if (next.status === 'Yes') {
+                next.riskRating = 'Good';
             }
-        }));
+
+            if (next.status === 'No' || next.status === 'Unsure') {
+                if (next.riskRating === 'Good') {
+                    next.riskRating = undefined;
+                }
+            }
+
+            if (next.status === 'NA' || next.status === 'Unanswered') {
+                next.riskRating = undefined;
+            }
+
+            return {
+                ...prev,
+                [questionId]: next,
+            };
+        });
     };
 
     const addImage = (questionId: string, base64: string, fileType?: 'image' | 'pdf', fileName?: string, thumbnail?: string) => {
-        setAnswers(prev => {
+        setAnswers((prev) => {
             const current = prev[questionId] || {
                 questionId,
                 status: 'Unanswered' as AnswerStatus,
                 timestamp: Date.now(),
                 images: [],
-                notes: '',
-                riskRating: undefined
+                selectedStandards: [],
             };
 
             const newImage = {
@@ -245,135 +379,164 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
                 caption: '',
                 fileType: fileType || 'image',
                 fileName: fileName || '',
-                thumbnail: thumbnail || ''
+                thumbnail: thumbnail || '',
             };
 
             return {
                 ...prev,
                 [questionId]: {
                     ...current,
-                    images: [...(current.images || []), newImage]
-                }
+                    images: [...(current.images || []), newImage],
+                    timestamp: Date.now(),
+                },
             };
         });
     };
 
     const updateImageCaption = (questionId: string, imageId: string, caption: string) => {
-        setAnswers(prev => {
+        setAnswers((prev) => {
             const current = prev[questionId];
             if (!current || !current.images) return prev;
 
-            const newImages = current.images.map(img =>
-                img.id === imageId ? { ...img, caption } : img
-            );
-
+            const images = current.images.map((img) => (img.id === imageId ? { ...img, caption } : img));
             return {
                 ...prev,
                 [questionId]: {
                     ...current,
-                    images: newImages
-                }
+                    images,
+                    timestamp: Date.now(),
+                },
             };
         });
     };
 
     const removeImage = (questionId: string, index: number) => {
-        setAnswers(prev => {
+        setAnswers((prev) => {
             const current = prev[questionId];
             if (!current || !current.images) return prev;
 
-            const newImages = [...current.images];
-            newImages.splice(index, 1);
+            const images = [...current.images];
+            images.splice(index, 1);
 
             return {
                 ...prev,
                 [questionId]: {
                     ...current,
-                    images: newImages
-                }
+                    images,
+                    timestamp: Date.now(),
+                },
             };
         });
     };
 
     const moveImage = (questionId: string, fromIndex: number, toIndex: number) => {
-        setAnswers(prev => {
+        setAnswers((prev) => {
             const current = prev[questionId];
             if (!current || !current.images) return prev;
             if (toIndex < 0 || toIndex >= current.images.length) return prev;
 
-            const newImages = [...current.images];
-            const [moved] = newImages.splice(fromIndex, 1);
-            newImages.splice(toIndex, 0, moved);
+            const images = [...current.images];
+            const [moved] = images.splice(fromIndex, 1);
+            images.splice(toIndex, 0, moved);
 
             return {
                 ...prev,
                 [questionId]: {
                     ...current,
-                    images: newImages
-                }
+                    images,
+                    timestamp: Date.now(),
+                },
             };
         });
     };
 
+    const updateStandardsData = (nextData: AssessmentData) => {
+        setData(nextData);
+        saveStandardsToStorage(nextData);
+
+        const validQuestionIds = new Set(nextData.flatMap((category) => category.questions.map((question) => question.id)));
+        setAnswers((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => validQuestionIds.has(id))));
+    };
+
+    const resetStandardsData = () => {
+        const defaults = standardsData as AssessmentData;
+        setData(defaults);
+        localStorage.removeItem(STANDARDS_STORAGE_KEY);
+
+        const validQuestionIds = new Set(defaults.flatMap((category) => category.questions.map((question) => question.id)));
+        setAnswers((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => validQuestionIds.has(id))));
+    };
+
     const resetAssessment = () => {
-        // Only clears active in-memory state, does NOT delete from storage
         setAnswers({});
         setConfigState(null);
         setCurrentAssessmentId(null);
         localStorage.removeItem(ACTIVE_ID_KEY);
+        localStorage.removeItem(ACTIVE_SESSION_KEY);
     };
 
     const getCategoryProgress = (categoryId: string) => {
-        const category = data.find(c => c.id === categoryId);
+        const category = data.find((item) => item.id === categoryId);
         if (!category) return { completed: 0, total: 0, percentage: 0 };
 
         const total = category.questions.length;
-        const completed = category.questions.filter(q => answers[q.id]?.status && answers[q.id]?.status !== 'Unanswered').length;
+        const completed = category.questions.filter((question) => {
+            const status = answers[question.id]?.status;
+            return status && status !== 'Unanswered';
+        }).length;
 
         return {
             completed,
             total,
-            percentage: total === 0 ? 0 : Math.round((completed / total) * 100)
+            percentage: total === 0 ? 0 : Math.round((completed / total) * 100),
         };
     };
 
-    const overallProgress = (() => {
+    const overallProgress = useMemo(() => {
         let total = 0;
         let completed = 0;
 
-        data.forEach(c => {
-            total += c.questions.length;
-            completed += c.questions.filter(q => answers[q.id]?.status && answers[q.id]?.status !== 'Unanswered').length;
+        data.forEach((category) => {
+            total += category.questions.length;
+            completed += category.questions.filter((question) => {
+                const status = answers[question.id]?.status;
+                return status && status !== 'Unanswered';
+            }).length;
         });
 
         return {
             completed,
             total,
-            percentage: total === 0 ? 0 : Math.round((completed / total) * 100)
+            percentage: total === 0 ? 0 : Math.round((completed / total) * 100),
         };
-    })();
+    }, [answers, data]);
 
     return (
-        <AssessmentContext.Provider value={{
-            data,
-            answers,
-            config,
-            currentAssessmentId,
-            setConfig,
-            setAnswer,
-            addImage,
-            updateImageCaption,
-            removeImage,
-            moveImage,
-            getCategoryProgress,
-            overallProgress,
-            resetAssessment,
-            startNewAssessment,
-            loadAssessment,
-            getSavedAssessments,
-            deleteAssessment,
-            completeAssessment,
-        }}>
+        <AssessmentContext.Provider
+            value={{
+                data,
+                answers,
+                config,
+                currentAssessmentId,
+                totalQuestionCount,
+                setConfig,
+                setAnswer,
+                addImage,
+                updateImageCaption,
+                removeImage,
+                moveImage,
+                getCategoryProgress,
+                overallProgress,
+                updateStandardsData,
+                resetStandardsData,
+                resetAssessment,
+                startNewAssessment,
+                loadAssessment,
+                getSavedAssessments,
+                deleteAssessment,
+                completeAssessment,
+            }}
+        >
             {children}
         </AssessmentContext.Provider>
     );

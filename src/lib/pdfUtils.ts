@@ -1,46 +1,32 @@
-/**
+﻿/**
  * Generates a thumbnail image (base64 JPEG) from the first page of a PDF.
- * Uses pdfjs-dist v5 to render the first page onto an off-screen canvas.
  */
 export async function generatePdfThumbnail(pdfDataUrl: string): Promise<string> {
-    // Dynamically import pdfjs-dist (client-side only)
     const pdfjsLib = await import('pdfjs-dist');
 
-    // For pdfjs-dist v5, set the worker from the CDN
-    // Use the .min.mjs worker for modern browsers
     const version = pdfjsLib.version;
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-            `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
     }
 
-    // Convert data URL to Uint8Array
     const base64 = pdfDataUrl.split(',')[1];
     if (!base64) throw new Error('Invalid PDF data URL');
 
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
+    for (let i = 0; i < binaryString.length; i += 1) {
         bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Load the PDF document
-    const loadingTask = pdfjsLib.getDocument({
-        data: bytes,
-        useSystemFonts: true,
-    });
+    const loadingTask = pdfjsLib.getDocument({ data: bytes, useSystemFonts: true });
     const pdf = await loadingTask.promise;
-
-    // Get the first page
     const page = await pdf.getPage(1);
 
-    // Scale to a reasonable thumbnail size (max 400px wide)
     const viewport = page.getViewport({ scale: 1 });
     const maxWidth = 400;
     const scale = maxWidth / viewport.width;
     const scaledViewport = page.getViewport({ scale });
 
-    // Create an off-screen canvas
     const canvas = document.createElement('canvas');
     canvas.width = Math.floor(scaledViewport.width);
     canvas.height = Math.floor(scaledViewport.height);
@@ -48,20 +34,17 @@ export async function generatePdfThumbnail(pdfDataUrl: string): Promise<string> 
 
     if (!ctx) throw new Error('Could not get canvas context');
 
-    // Render the page — pdfjs-dist v5 render parameters
     const renderTask = page.render({
         canvasContext: ctx,
         viewport: scaledViewport,
-        canvas: canvas,
-    } as any); // Use 'as any' to handle varying type definitions across versions
+        canvas,
+    });
 
     await renderTask.promise;
 
-    // Convert canvas to JPEG base64
     const thumbnailBase64 = canvas.toDataURL('image/jpeg', 0.8);
-
-    // Clean up
     pdf.destroy();
 
     return thumbnailBase64;
 }
+

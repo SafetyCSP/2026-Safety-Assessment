@@ -1,82 +1,108 @@
-import { AssessmentData, Answer } from '@/types/standards';
+import { AssessmentData, Answer, AnswerStatus } from '@/types/standards';
+
+export const DEFAULT_PASS_THRESHOLD = 80;
 
 export interface AssessmentStats {
     high: number;
     medium: number;
     low: number;
-    unknown: number;
-    good: number;
-    totalRisks: number;
+    answeredCount: number;
+    passCount: number;
+    failCount: number;
+    unansweredCount: number;
     complianceScore: number;
     totalQuestions: number;
-    complianceCount: number;
+    threshold: number;
+    meetsThreshold: boolean;
 }
 
-export function calculateStats(data: AssessmentData, answers: Record<string, Answer>): AssessmentStats {
-    let h = 0, m = 0, l = 0, u = 0;
-    let compliant = 0;
-    let applicableTotal = 0;
+function isAnswered(status?: AnswerStatus): boolean {
+    return !!status && status !== 'Unanswered';
+}
 
-    data.forEach(cat => {
-        cat.questions.forEach(q => {
-            const answer = answers[q.id];
-            if (answer) {
-                if (answer.status === 'Yes') {
-                    compliant++;
-                    applicableTotal++;
-                } else if (answer.status === 'No' || answer.status === 'Unsure') {
-                    applicableTotal++;
-                    // Count risks
-                    if (answer.riskRating === 'High') h++;
-                    if (answer.riskRating === 'Medium') m++;
-                    if (answer.riskRating === 'Low') l++;
-                    if (answer.riskRating === 'Unknown') u++;
-                }
-                // NA and Unanswered are ignored for score and risk counts
+function isPassingStatus(status?: AnswerStatus): boolean {
+    return status === 'Yes' || status === 'NA';
+}
+
+export function calculateStats(
+    data: AssessmentData,
+    answers: Record<string, Answer>,
+    threshold: number = DEFAULT_PASS_THRESHOLD
+): AssessmentStats {
+    let high = 0;
+    let medium = 0;
+    let low = 0;
+    let answeredCount = 0;
+    let passCount = 0;
+
+    const totalQuestions = data.reduce((sum, category) => sum + category.questions.length, 0);
+
+    data.forEach((category) => {
+        category.questions.forEach((question) => {
+            const answer = answers[question.id];
+            if (!isAnswered(answer?.status)) {
+                return;
             }
+
+            answeredCount += 1;
+
+            if (isPassingStatus(answer.status)) {
+                passCount += 1;
+            }
+
+            if (answer.riskRating === 'High') high += 1;
+            if (answer.riskRating === 'Medium') medium += 1;
+            if (answer.riskRating === 'Low') low += 1;
         });
     });
 
-    const score = applicableTotal === 0 ? 0 : Math.round((compliant / applicableTotal) * 100);
+    const failCount = answeredCount - passCount;
+    const unansweredCount = totalQuestions - answeredCount;
+    const complianceScore = answeredCount === 0 ? 0 : Math.round((passCount / answeredCount) * 100);
 
     return {
-        high: h,
-        medium: m,
-        low: l,
-        unknown: u,
-        good: compliant,
-        totalRisks: h + m + l + u,
-        complianceScore: score,
-        totalQuestions: applicableTotal,
-        complianceCount: compliant
+        high,
+        medium,
+        low,
+        answeredCount,
+        passCount,
+        failCount,
+        unansweredCount,
+        complianceScore,
+        totalQuestions,
+        threshold,
+        meetsThreshold: complianceScore >= threshold,
     };
 }
 
 export function generateCSV(data: AssessmentData, answers: Record<string, Answer>): string {
-    // Headers
-    let csv = 'Question ID,Category,Question Text,Ref OSHA,Ref TJC,Ref DNV,Status,Risk Rating,Comments\n';
+    let csv = 'Question ID,Category,Question Text,Status,Risk Rating,Findings,Recommendation,Selected Standards,Attached Files\n';
 
-    // Rows
-    data.forEach(cat => {
-        cat.questions.forEach(q => {
-            const ans = answers[q.id];
-            const status = ans?.status || 'Unanswered';
-            const risk = ans?.riskRating || '';
-            // Escape quotes by doubling them, and wrap field in quotes to handle commas/newlines
-            const notes = (ans?.notes || '').replace(/"/g, '""');
-            const text = q.text.replace(/"/g, '""');
-            const categoryTitle = cat.title.replace(/"/g, '""');
+    data.forEach((category) => {
+        category.questions.forEach((question) => {
+            const answer = answers[question.id];
+            const status = answer?.status || 'Unanswered';
+            const risk = answer?.riskRating || '';
+            const findings = (answer?.notes || '').replace(/"/g, '""');
+            const recommendation = (answer?.recommendation || '').replace(/"/g, '""');
+            const selectedStandards = (answer?.selectedStandards || []).join(' | ').replace(/"/g, '""');
+            const files = (answer?.images || [])
+                .map((img) => img.fileName || `file-${img.id}`)
+                .join(' | ')
+                .replace(/"/g, '""');
+            const questionText = question.text.replace(/"/g, '""');
+            const categoryTitle = category.title.replace(/"/g, '""');
 
             const row = [
-                q.id,
+                question.id,
                 `"${categoryTitle}"`,
-                `"${text}"`,
-                `"${q.references.osha}"`,
-                `"${q.references.tjc}"`,
-                `"${q.references.dnv}"`,
+                `"${questionText}"`,
                 status,
                 risk,
-                `"${notes}"` // Wrapped in quotes to handle newlines safe for Excel/CSV
+                `"${findings}"`,
+                `"${recommendation}"`,
+                `"${selectedStandards}"`,
+                `"${files}"`,
             ].join(',');
 
             csv += row + '\n';

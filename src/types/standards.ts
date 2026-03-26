@@ -37,7 +37,7 @@ export interface Question {
 }
 
 export type AnswerStatus = 'Yes' | 'No' | 'NA' | 'Unsure' | 'Unanswered';
-export type RiskRating = 'Good' | 'Low' | 'Medium' | 'High' | 'Unknown';
+export type RiskRating = 'Low' | 'Medium' | 'High' | 'Good';
 
 export interface AssessmentImage {
     id: string;

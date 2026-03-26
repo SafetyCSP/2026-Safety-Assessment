@@ -1,0 +1,60 @@
+
+> ai-safety-tool@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3011
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://127.0.0.1:3011
+- Network:       http://127.0.0.1:3011
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 714ms
+ GET /assessment 200 in 361ms (compile: 227ms, render: 134ms)
+⨯ ./src/app/report/page.tsx
+Reading source code for parsing failed
+An unexpected error happened while trying to read the source code to parse: failed to convert rope into string
+
+Caused by:
+- invalid utf-8 sequence of 1 bytes from index 14992
+
+
+ GET /report 500 in 308ms (compile: 176ms, render: 132ms)
+ GET /assessment 200 in 28ms (compile: 6ms, render: 22ms)
+✓ Compiled in 277ms
+ GET /report 200 in 133ms (compile: 42ms, render: 90ms)
+ GET /assessment 200 in 24ms (compile: 3ms, render: 21ms)
+ GET /report 200 in 25ms (compile: 3ms, render: 22ms)
+ GET /assessment 200 in 37ms (compile: 3ms, render: 34ms)
+ GET /report 200 in 16ms (compile: 4ms, render: 13ms)
+ POST /api/executive-summary 200 in 1968ms (compile: 87ms, render: 1881ms)
+ POST /api/executive-summary 200 in 2.0s (compile: 123ms, render: 1926ms)
+ GET /assessment 200 in 20ms (compile: 3ms, render: 16ms)
+ GET /report 200 in 17ms (compile: 3ms, render: 14ms)
+ POST /api/executive-summary 200 in 1930ms (compile: 4ms, render: 1926ms)
+ POST /api/executive-summary 200 in 2.0s (compile: 3ms, render: 2000ms)
+✓ Compiled in 108ms
+ POST /api/executive-summary 200 in 1757ms (compile: 3ms, render: 1754ms)
+ GET /report 200 in 131ms (compile: 53ms, render: 79ms)
+ GET /assessment 200 in 23ms (compile: 5ms, render: 17ms)
+ GET /report 200 in 16ms (compile: 4ms, render: 12ms)
+ POST /api/executive-summary 200 in 1892ms (compile: 5ms, render: 1888ms)
+ POST /api/executive-summary 200 in 1937ms (compile: 2ms, render: 1935ms)
+✓ Compiled in 75ms
+ POST /api/executive-summary 200 in 2.1s (compile: 3ms, render: 2.1s)
+ GET /report 200 in 188ms (compile: 70ms, render: 118ms)
+ GET /report 200 in 32ms (compile: 4ms, render: 28ms)
+ POST /api/executive-summary 200 in 1838ms (compile: 2ms, render: 1835ms)
+✓ Compiled in 53ms
+ POST /api/executive-summary 200 in 1820ms (compile: 1864µs, render: 1818ms)
+ GET /report 200 in 102ms (compile: 39ms, render: 63ms)
+ GET /report 200 in 37ms (compile: 4ms, render: 33ms)
+ POST /api/executive-summary 200 in 1841ms (compile: 3ms, render: 1839ms)
+✓ Compiled in 84ms
+ POST /api/executive-summary 200 in 1887ms (compile: 3ms, render: 1884ms)
+✓ Compiled in 61ms
+ POST /api/executive-summary 200 in 1687ms (compile: 1988µs, render: 1685ms)
+ GET /report 200 in 103ms (compile: 38ms, render: 65ms)
+ POST /api/executive-summary 200 in 1882ms (compile: 2ms, render: 1879ms)
+ GET /report 200 in 32ms (compile: 3ms, render: 29ms)
+ POST /api/executive-summary 200 in 1845ms (compile: 4ms, render: 1841ms)
+^C^CTerminate batch job (Y/N)? 

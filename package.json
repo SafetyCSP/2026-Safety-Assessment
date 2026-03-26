@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "validate:env": "node scripts/validate-env.mjs",
+    "validate:env:strict": "node scripts/validate-env.mjs --strict"
   },
   "dependencies": {
     "clsx": "^2.1.1",

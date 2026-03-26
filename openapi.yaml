@@ -1,31 +1,61 @@
 openapi: 3.0.1
 info:
   title: AI Safety Assessment API
-  description: API for analyzing safety hazards in images and querying safety standards.
-  version: 1.0.0
+  description: API surface for assessment AI workflows, reporting, and cloud sync.
+  version: 1.1.0
 servers:
   - url: https://<YOUR_APP_URL>
-    description: Production Server
+    description: Production server
 
 paths:
+  /api/health:
+    get:
+      operationId: GetHealth
+      summary: Check API runtime health and integration readiness
+      responses:
+        '200':
+          description: Health status returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  service:
+                    type: string
+                  checks:
+                    type: object
+                    properties:
+                      aiFeaturesConfigured:
+                        type: boolean
+                      cloudSyncConfigured:
+                        type: boolean
+                      cloudSyncPartiallyConfigured:
+                        type: boolean
+
   /api/analyze-image:
     post:
       operationId: AnalyzeSafetyImage
       summary: Analyze an image for safety hazards
-      description: detailed 
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [image, context]
               properties:
                 image:
                   type: string
                   description: Base64 encoded image string (with or without data URI prefix).
                 context:
                   type: string
-                  description: The specific safety standard or context to check against (e.g., "OSHA 1910.22").
+                  description: Safety standard context (for example OSHA 1910.22).
       responses:
         '200':
           description: Successful analysis
@@ -36,17 +66,15 @@ paths:
                 properties:
                   analysis:
                     type: string
-                    description: The AI-generated analysis of the image.
         '400':
           description: Invalid input
         '500':
-          description: Server error
+          description: Server error or missing API key
 
   /api/chat:
     post:
       operationId: ChatWithSafetyBot
-      summary: Chat with the Safety Assistant
-      description: Send a message to the AI Safety Assistant, which can search local standards.
+      summary: Chat with the AI safety assistant
       requestBody:
         required: true
         content:
@@ -56,7 +84,11 @@ paths:
               properties:
                 message:
                   type: string
-                  description: The user's query or message.
+                messages:
+                  type: array
+                  description: Optional message history.
+                  items:
+                    type: object
       responses:
         '200':
           description: Successful response
@@ -67,6 +99,73 @@ paths:
                 properties:
                   reply:
                     type: string
-                    description: The assistant's response.
+        '500':
+          description: Server error or missing API key
+
+  /api/executive-summary:
+    post:
+      operationId: GenerateExecutiveSummary
+      summary: Generate a consistently formatted executive summary for an assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Summary generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    type: string
+                    enum: [ai, fallback]
+                  summary:
+                    type: object
         '500':
           description: Server error
+
+  /api/cloud-sync:
+    post:
+      operationId: SyncAssessmentToCloud
+      summary: Save assessment report JSON to OneDrive or SharePoint via Microsoft Graph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assessmentId, report]
+              properties:
+                assessmentId:
+                  type: string
+                customerName:
+                  type: string
+                assessedAt:
+                  type: string
+                  format: date-time
+                report:
+                  type: object
+      responses:
+        '200':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  webUrl:
+                    type: string
+        '400':
+          description: Invalid payload
+        '500':
+          description: Graph configuration/auth/upload failure
