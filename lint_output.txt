@@ -1,0 +1,101 @@
+
+> ai-safety-tool@0.1.0 lint
+> eslint
+
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\analyze-standards.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\check_duplicates.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\list_models.js
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\scripts\convert-standards.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\app\api\analyze-image\route.ts
+  86:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\app\api\chat\route.ts
+   43:20  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   47:37  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   49:43  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   51:86  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  100:13  error  'contents' is never reassigned. Use 'const' instead  prefer-const
+  100:23  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  128:70  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  161:65  error  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\app\report\page.tsx
+  472:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  477:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\components\QuestionCard.tsx
+  300:66  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  303:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\components\StartAssessmentForm.tsx
+  33:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\components\StartAssessmentForm.tsx:33:9
+  31 |
+  32 |     useEffect(() => {
+> 33 |         setAssessorDate(new Date().toISOString().split('T')[0]);
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  34 |     }, []);
+  35 |
+  36 |     const handleSubmit = (e: React.FormEvent) => {  react-hooks/set-state-in-effect
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\context\AssessmentContext.tsx
+  192:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\context\AssessmentContext.tsx:192:9
+  190 |
+  191 |     useEffect(() => {
+> 192 |         setData(loadStandardsFromStorage());
+      |         ^^^^^^^ Avoid calling setState() directly within an effect
+  193 |
+  194 |         const initialSession = resolveInitialSession();
+  195 |         setAnswers(initialSession.answers);                                                                    react-hooks/set-state-in-effect
+  249:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\src\context\AssessmentContext.tsx:249:9
+  247 |         if (!candidate) return;
+  248 |
+> 249 |         setCurrentAssessmentId(candidate.id);
+      |         ^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  250 |         setConfigState(candidate.config);
+  251 |         if (Object.keys(answers).length === 0) {
+  252 |             setAnswers(candidate.answers || {});  react-hooks/set-state-in-effect
+
+C:\Users\johnb\.gemini\antigravity\scratch\ai-safety-tool\test_function_calling.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+??? 26 problems (21 errors, 5 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

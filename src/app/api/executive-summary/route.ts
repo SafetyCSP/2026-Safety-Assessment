@@ -15,7 +15,7 @@ interface SummaryStats {
 }
 
 interface SummaryInput {
-    customerName: string;
+    reportTitle: string;
     location: string;
     assessorName: string;
     assessmentDate: string;
@@ -55,7 +55,7 @@ function fallbackSummary(input: SummaryInput): ExecutiveSummary {
     ];
 
     return {
-        assessmentOverview: `Assessment completed for ${input.customerName} (${input.location}) on ${input.assessmentDate} by ${input.assessorName}. The current passing score is ${input.stats.complianceScore}% against a ${input.stats.threshold}% threshold based on ${input.stats.answeredCount} answered questions.`,
+        assessmentOverview: `Assessment completed for ${input.reportTitle} (${input.location}) on ${input.assessmentDate} by ${input.assessorName}. The current passing score is ${input.stats.complianceScore}% against a ${input.stats.threshold}% threshold based on ${input.stats.answeredCount} answered questions.`,
         riskProfile,
         criticalFindings: keyFindings.length > 0 ? keyFindings : ['No critical findings were identified from the answered questions.'],
         recommendedActions,

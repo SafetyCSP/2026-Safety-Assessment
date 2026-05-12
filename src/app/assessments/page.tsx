@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -70,7 +70,7 @@ export default function AssessmentsPage() {
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-semibold text-foreground truncate">{assessment.config.customer.name || 'Unnamed Assessment'}</h3>
+                                                <h3 className="font-semibold text-foreground truncate">{assessment.config.reportTitle || assessment.config.customer?.name || 'Unnamed Assessment'}</h3>
                                                 {isCompleted ? (
                                                     <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                                                         <CheckCircle size={12} /> Completed
@@ -82,8 +82,8 @@ export default function AssessmentsPage() {
                                                 )}
                                             </div>
                                             <div className="text-sm text-muted-foreground space-y-0.5">
-                                                <p>{assessment.config.customer.location || 'No location'}</p>
-                                                <p className="text-xs">Assessor: {assessment.config.assessor.name} &middot; {new Date(assessment.updatedAt).toLocaleDateString()} &middot; {progress.answered} questions answered</p>
+                                                <p>{assessment.config.location || assessment.config.customer?.location || 'No location'}</p>
+                                                <p className="text-xs">Assessor: {assessment.config.assessorName || assessment.config.assessor?.name} &middot; {new Date(assessment.updatedAt).toLocaleDateString()} &middot; {progress.answered} questions answered</p>
                                             </div>
 
                                             {!isCompleted && (
@@ -106,7 +106,7 @@ export default function AssessmentsPage() {
                                                 </button>
                                             )}
                                             <button
-                                                onClick={() => handleDelete(assessment.id, assessment.config.customer.name)}
+                                                onClick={() => handleDelete(assessment.id, assessment.config.reportTitle || assessment.config.customer?.name || 'Unnamed Assessment')}
                                                 title="Delete assessment"
                                                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30 transition-all"
                                             >

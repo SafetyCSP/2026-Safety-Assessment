@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -9,9 +9,6 @@ import { ArrowLeft, Download, Plus, Save, Trash2, Upload, RotateCcw } from 'luci
 function emptyReferences(): RegulatoryReference {
     return {
         osha: '',
-        cms: '',
-        tjc: '',
-        dnv: '',
     };
 }
 
@@ -36,9 +33,6 @@ function sanitizeData(input: unknown): AssessmentData {
                       text: (question.text || '').toString(),
                       references: {
                           osha: (refs.osha || '').toString(),
-                          cms: (refs.cms || '').toString(),
-                          tjc: (refs.tjc || '').toString(),
-                          dnv: (refs.dnv || '').toString(),
                       },
                       notes: (question.notes || '').toString(),
                       updated: Boolean(question.updated),
@@ -361,29 +355,11 @@ export default function QuestionConfigurationPage() {
                                                 className="w-full min-h-[70px] p-2 text-sm rounded border bg-background"
                                             />
 
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-1 gap-2">
                                                 <textarea
                                                     value={question.references.osha}
                                                     onChange={(e) => setReferenceField(categoryIndex, questionIndex, 'osha', e.target.value)}
                                                     placeholder="OSHA reference"
-                                                    className="w-full min-h-[80px] p-2 text-xs rounded border bg-background"
-                                                />
-                                                <textarea
-                                                    value={question.references.cms}
-                                                    onChange={(e) => setReferenceField(categoryIndex, questionIndex, 'cms', e.target.value)}
-                                                    placeholder="CMS reference"
-                                                    className="w-full min-h-[80px] p-2 text-xs rounded border bg-background"
-                                                />
-                                                <textarea
-                                                    value={question.references.tjc}
-                                                    onChange={(e) => setReferenceField(categoryIndex, questionIndex, 'tjc', e.target.value)}
-                                                    placeholder="TJC reference"
-                                                    className="w-full min-h-[80px] p-2 text-xs rounded border bg-background"
-                                                />
-                                                <textarea
-                                                    value={question.references.dnv}
-                                                    onChange={(e) => setReferenceField(categoryIndex, questionIndex, 'dnv', e.target.value)}
-                                                    placeholder="DNV reference"
                                                     className="w-full min-h-[80px] p-2 text-xs rounded border bg-background"
                                                 />
                                             </div>

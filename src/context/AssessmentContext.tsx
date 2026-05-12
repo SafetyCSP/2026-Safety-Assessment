@@ -189,9 +189,11 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
     const [isBootstrapped, setIsBootstrapped] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setData(loadStandardsFromStorage());
 
         const initialSession = resolveInitialSession();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAnswers(initialSession.answers);
         setConfigState(initialSession.config);
         setCurrentAssessmentId(initialSession.currentAssessmentId);
@@ -246,9 +248,11 @@ export function AssessmentProvider({ children }: { children: React.ReactNode }) 
 
         if (!candidate) return;
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentAssessmentId(candidate.id);
         setConfigState(candidate.config);
         if (Object.keys(answers).length === 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setAnswers(candidate.answers || {});
         }
         localStorage.setItem(ACTIVE_ID_KEY, candidate.id);

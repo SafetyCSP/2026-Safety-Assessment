@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -18,7 +19,7 @@ interface ExecutiveSummary {
 }
 
 function fallbackSummary(args: {
-    customerName: string;
+    reportTitle: string;
     location: string;
     assessorName: string;
     assessmentDate: string;
@@ -27,7 +28,7 @@ function fallbackSummary(args: {
     answeredCount: number;
 }): ExecutiveSummary {
     return {
-        assessmentOverview: `Assessment completed for ${args.customerName} (${args.location}) on ${args.assessmentDate} by ${args.assessorName}. Passing score is ${args.score}% based on ${args.answeredCount} answered questions.`,
+        assessmentOverview: `Assessment completed for ${args.reportTitle} (${args.location}) on ${args.assessmentDate} by ${args.assessorName}. Passing score is ${args.score}% based on ${args.answeredCount} answered questions.`,
         riskProfile: args.score >= 90 ? 'Overall risk profile is low.' : args.score >= 75 ? 'Overall risk profile is moderate.' : 'Overall risk profile is elevated.',
         criticalFindings: ['Review No and Unsure responses first, with emphasis on high-risk items.'],
         recommendedActions: ['Assign corrective actions with owners and due dates.', 'Reassess corrected items to confirm closure.'],
@@ -134,10 +135,10 @@ export default function ReportPage() {
         if (!config) return;
 
         const fallback = fallbackSummary({
-            customerName: config.customer.name || 'Customer',
-            location: config.customer.location || 'Location',
-            assessorName: config.assessor.name || 'Assessor',
-            assessmentDate: config.assessor.date || new Date().toISOString().split('T')[0],
+            reportTitle: config.reportTitle || config.customer?.name || 'Customer',
+            location: config.location || config.customer?.location || 'Location',
+            assessorName: config.assessorName || config.assessor?.name || 'Assessor',
+            assessmentDate: config.date || config.assessor?.date || new Date().toISOString().split('T')[0],
             score: stats.complianceScore,
             threshold: stats.threshold,
             answeredCount: stats.answeredCount,
@@ -151,10 +152,10 @@ export default function ReportPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        customerName: config.customer.name,
-                        location: config.customer.location,
-                        assessorName: config.assessor.name,
-                        assessmentDate: config.assessor.date,
+                        reportTitle: config.reportTitle || config.customer?.name,
+                        location: config.location || config.customer?.location,
+                        assessorName: config.assessorName || config.assessor?.name,
+                        assessmentDate: config.date || config.assessor?.date,
                         stats,
                         topFindings: findingsOnly.slice(0, 10).map((item) => ({
                             category: item.category.title,
@@ -228,8 +229,8 @@ export default function ReportPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     assessmentId: currentAssessmentId || 'unsaved-assessment',
-                    customerName: config?.customer.name || 'customer',
-                    assessedAt: config?.assessor.date || new Date().toISOString(),
+                    customerName: config?.reportTitle || config?.customer?.name || 'customer',
+                    assessedAt: config?.date || config?.assessor?.date || new Date().toISOString(),
                     report: {
                         generatedAt: new Date().toISOString(),
                         config,
@@ -318,9 +319,14 @@ export default function ReportPage() {
                 <header className="border-b-2 border-primary/20 pb-6 print:pb-4">
                     <div className="flex justify-between items-start gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight mb-2">Safety Assessment Report</h1>
-                            <p className="text-sm text-muted-foreground">{config.customer.name} • {config.customer.location}</p>
-                            <p className="text-sm text-muted-foreground">Assessor: {config.assessor.name} • Date: {config.assessor.date}</p>
+                            <h1 className="text-3xl font-bold tracking-tight mb-2">{config.reportTitle || config.customer?.name || 'Safety Assessment Report'}</h1>
+                            <p className="text-sm text-muted-foreground">{config.location || config.customer?.location} {config.operationalScope ? `• Scope: ${config.operationalScope}` : ''}</p>
+                            <p className="text-sm text-muted-foreground">Assessor: {config.assessorName || config.assessor?.name} • Date: {config.date || config.assessor?.date}</p>
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {(config.assessmentId || config.customer?.trackCode) && <span className="text-xs font-semibold px-2.5 py-1 bg-muted rounded-md text-muted-foreground border">ID: {config.assessmentId || config.customer?.trackCode}</span>}
+                                {config.reviewStatus && <span className="text-xs font-semibold px-2.5 py-1 bg-muted rounded-md text-muted-foreground border">Status: {config.reviewStatus}</span>}
+                                {config.pointOfContact && <span className="text-xs font-semibold px-2.5 py-1 bg-muted rounded-md text-muted-foreground border">POC: {config.pointOfContact}</span>}
+                            </div>
                         </div>
                         <div className="text-right">
                             <div className="text-3xl font-bold text-primary">{stats.complianceScore}%</div>

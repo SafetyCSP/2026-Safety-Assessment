@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAssessment } from '@/context/AssessmentContext';
 import { AssessmentConfig } from '@/types/standards';
-import { ArrowRight, User, MapPin } from 'lucide-react';
+import { ArrowRight, FileText, User, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function StartAssessmentForm() {
@@ -12,25 +12,23 @@ export function StartAssessmentForm() {
     const { startNewAssessment } = useAssessment();
     const [isLoading, setIsLoading] = useState(false);
 
+    // Assessment Details
+    const [reportTitle, setReportTitle] = useState('');
+    const [assessmentId, setAssessmentId] = useState('');
+    const [date, setDate] = useState('');
+    const [reviewStatus, setReviewStatus] = useState<'Draft' | 'Final' | 'Approved'>('Draft');
+
+    // Site Information
+    const [location, setLocation] = useState('');
+    const [operationalScope, setOperationalScope] = useState('');
+
+    // Personnel
     const [assessorName, setAssessorName] = useState('');
-    const [assessorDate, setAssessorDate] = useState('');
-    const [region, setRegion] = useState('');
-
-    const REGIONS = ['Central', 'Southeast', 'Southwest', 'Northeast'];
-
-    const [amName, setAmName] = useState('');
-    const [amEmail, setAmEmail] = useState('');
-    const [amPhone, setAmPhone] = useState('');
-
-    const [customerName, setCustomerName] = useState('');
-    const [customerLocation, setCustomerLocation] = useState('');
-    const [sapAccountNumber, setSapAccountNumber] = useState('');
-    const [customerContact, setCustomerContact] = useState('');
-    const [trackCode, setTrackCode] = useState('');
-    const [subtrackCode, setSubtrackCode] = useState('');
+    const [pointOfContact, setPointOfContact] = useState('');
 
     useEffect(() => {
-        setAssessorDate(new Date().toISOString().split('T')[0]);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDate(new Date().toISOString().split('T')[0]);
     }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -38,25 +36,15 @@ export function StartAssessmentForm() {
         setIsLoading(true);
 
         const config: AssessmentConfig = {
-            assessor: {
-                name: assessorName,
-                date: assessorDate,
-                region,
-            },
-            accountManager: {
-                name: amName,
-                email: amEmail,
-                phone: amPhone,
-            },
-            customer: {
-                name: customerName,
-                location: customerLocation,
-                sapAccountNumber,
-                contact: customerContact,
-                trackCode,
-                subtrackCode,
-            },
-            standards: ['OSHA'],
+            reportTitle,
+            date,
+            location,
+            assessmentId,
+            assessorName,
+            pointOfContact,
+            operationalScope,
+            reviewStatus,
+            standards: ['OSHA'], // Keep default standard for now
         };
 
         startNewAssessment(config);
@@ -66,46 +54,39 @@ export function StartAssessmentForm() {
         }, 300);
     };
 
-    const isFormValid = assessorName && amName && customerName;
+    const isFormValid = reportTitle && location && assessorName;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Section title="Assessor Information" icon={<User size={18} />}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input label="Assessor Name" value={assessorName} onChange={setAssessorName} placeholder="John Doe" required />
-                    <Input label="Date" type="date" value={assessorDate} onChange={setAssessorDate} required />
+            <Section title="Assessment Details" icon={<FileText size={18} />}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Report Title" value={reportTitle} onChange={setReportTitle} placeholder="e.g. Q3 Site Safety Assessment" required />
+                    <Input label="Assessment ID" value={assessmentId} onChange={setAssessmentId} placeholder="e.g. AST-2026-001" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <Input label="Date" type="date" value={date} onChange={setDate} required />
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1.5">Region</label>
-                        <select title="Select Region" value={region} onChange={(e) => setRegion(e.target.value)} className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all">
-                            <option value="">Select a region...</option>
-                            {REGIONS.map((item) => (
-                                <option key={item} value={item}>{item}</option>
-                            ))}
+                        <label className="block text-sm font-medium text-foreground mb-1.5">Review Status <span className="text-red-500">*</span></label>
+                        <select title="Select Review Status" value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value as any)} className="w-full px-3 py-2 rounded-md border border-input bg-background/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                            <option value="Draft">Draft</option>
+                            <option value="Final">Final</option>
+                            <option value="Approved">Approved</option>
                         </select>
                     </div>
                 </div>
             </Section>
 
-            <Section title="Account Manager Information" icon={<User size={18} />}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input label="Name" value={amName} onChange={setAmName} placeholder="Jane Smith" required />
-                    <Input label="Email" type="email" value={amEmail} onChange={setAmEmail} placeholder="jane@company.com" required />
-                    <Input label="Phone Number" type="tel" value={amPhone} onChange={setAmPhone} placeholder="(555) 123-4567" required />
+            <Section title="Site Information" icon={<MapPin size={18} />}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Location / Department" value={location} onChange={setLocation} placeholder="e.g. Building A, Maintenance Dept" required />
+                    <Input label="Operational Scope" value={operationalScope} onChange={setOperationalScope} placeholder="e.g. Full Facility Walkthrough" />
                 </div>
             </Section>
 
-            <Section title="Customer Information" icon={<MapPin size={18} />}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input label="Customer Name" value={customerName} onChange={setCustomerName} placeholder="Acme Corp" required />
-                    <Input label="Location / Facility" value={customerLocation} onChange={setCustomerLocation} placeholder="Building A, New York, NY" required />
-                    <Input label="SAP Account Number" value={sapAccountNumber} onChange={setSapAccountNumber} placeholder="1234567" />
-                </div>
-                <div className="grid grid-cols-1 gap-4 mt-4">
-                    <Input label="Customer Contact" value={customerContact} onChange={setCustomerContact} placeholder="Jane Doe, Safety Manager" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <Input label="Track Code" value={trackCode} onChange={setTrackCode} placeholder="TRK-001" />
-                    <Input label="Subtrack Code" value={subtrackCode} onChange={setSubtrackCode} placeholder="SUB-001" />
+            <Section title="Personnel" icon={<User size={18} />}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input label="Assessor Name(s)" value={assessorName} onChange={setAssessorName} placeholder="e.g. Jane Doe, John Smith" required />
+                    <Input label="Point of Contact" value={pointOfContact} onChange={setPointOfContact} placeholder="e.g. Safety Manager" />
                 </div>
             </Section>
 

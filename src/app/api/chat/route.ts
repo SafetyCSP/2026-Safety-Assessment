@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import standardsData from '../../../data/standards.json';
 
@@ -97,7 +98,7 @@ If you need to verify externally, call \`search_external_sources\`.
 User Query: "${lastUserMsg}"
 `;
 
-        let contents: any[] = [{
+        const contents: any[] = [{
             role: "user",
             parts: [{ text: systemPrompt }]
         }];

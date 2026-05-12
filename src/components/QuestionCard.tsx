@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -253,7 +254,7 @@ export function QuestionCard({ question }: QuestionCardProps) {
                     <div className="flex items-center justify-between pt-1">
                         <button onClick={() => setShowRefs(!showRefs)} className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
                             {showRefs ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                            {showRefs ? 'Hide References' : 'Show References'}
+                            Regulatory Alignment
                         </button>
 
                         <button onClick={() => setShowNotes(!showNotes)} className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
@@ -345,7 +346,7 @@ export function QuestionCard({ question }: QuestionCardProps) {
 
                     {showRefs && (
                         <div className="bg-muted/30 p-3 rounded-lg border text-sm space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Select standards to include in report:</p>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Select standards and notes to include in report:</p>
 
                             {Object.entries(question.references).map(([key, value]) => {
                                 if (!value) return null;

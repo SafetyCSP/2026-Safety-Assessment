@@ -83,7 +83,7 @@ You MUST respond with a valid JSON object matching exactly this schema:
         let analysis = {};
         try {
             analysis = JSON.parse(analysisText);
-        } catch (e) {
+        } catch {
             console.error("Failed to parse JSON response:", analysisText);
             return NextResponse.json({ error: 'Failed to process AI response properly' }, { status: 500 });
         }

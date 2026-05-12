@@ -1,15 +1,25 @@
 export interface AssessmentConfig {
-    assessor: {
+    reportTitle: string;
+    date: string;
+    location: string;
+    assessmentId: string;
+    assessorName: string;
+    pointOfContact: string;
+    operationalScope: string;
+    reviewStatus: 'Draft' | 'Final' | 'Approved';
+
+    // Legacy fields kept for backward compatibility
+    assessor?: {
         name: string;
         date: string;
         region?: string;
     };
-    accountManager: {
+    accountManager?: {
         name: string;
         email: string;
         phone: string;
     };
-    customer: {
+    customer?: {
         name: string;
         location: string;
         sapAccountNumber?: string;
@@ -18,14 +28,11 @@ export interface AssessmentConfig {
         subtrackCode?: string;
     };
     industry?: string[];
-    standards: string[];
+    standards?: string[];
 }
 
 export interface RegulatoryReference {
     osha: string;
-    cms: string;
-    tjc: string;
-    dnv: string;
 }
 
 export interface Question {
