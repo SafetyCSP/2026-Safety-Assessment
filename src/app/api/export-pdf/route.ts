@@ -26,6 +26,18 @@ function wrapText(text: string, maxWidth: number, font: PDFFont, fontSize: numbe
     return lines;
 }
 
+function sanitizeText(text: string): string {
+    if (!text) return '';
+    return text
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/\u00A7/g, 'Sec. ')
+        .replace(/\u00B5/g, 'u')
+        .replace(/\u00B0/g, ' deg')
+        .replace(/[^\x00-\x7F]/g, '');
+}
+
 function splitReferenceLines(value: string): string[] {
     if (!value) return [];
     return value.split(/\r?\n/).filter((line) => line.trim().length > 0);
@@ -94,12 +106,12 @@ export async function GET() {
         for (const category of categories) {
             checkNewPage(40);
             y -= 10;
-            page.drawText(`Category: ${category.id} - ${category.title}`, { x: margin, y, size: 16, font: boldFont, color: rgb(0, 0.2, 0.6) });
+            page.drawText(sanitizeText(`Category: ${category.id} - ${category.title}`), { x: margin, y, size: 16, font: boldFont, color: rgb(0, 0.2, 0.6) });
             y -= 30;
 
             for (const question of category.questions) {
                 // Wrap question text
-                const qText = `${question.id}: ${question.text}`;
+                const qText = sanitizeText(`${question.id}: ${question.text}`);
                 const lines = wrapText(qText, contentWidth, font, 11);
                 
                 checkNewPage(lines.length * 15 + 150); // space for text + dropdowns + textareas
@@ -133,7 +145,8 @@ export async function GET() {
                     page.drawText('Reference Standards:', { x: margin, y, size: 9, font: boldFont, color: rgb(0.4, 0.4, 0.4) });
                     y -= 12;
                     for (const ref of oshaRefs) {
-                        const refLines = wrapText(`• ${ref}`, contentWidth, font, 8);
+                        const cleanRef = sanitizeText(`• ${ref}`);
+                        const refLines = wrapText(cleanRef, contentWidth, font, 8);
                         checkNewPage(refLines.length * 10 + 100);
                         for (const rLine of refLines) {
                             page.drawText(rLine, { x: margin, y, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
@@ -145,7 +158,7 @@ export async function GET() {
                 
                 page.drawText('Aligned Standard:', { x: margin, y, size: 10, font: boldFont });
                 const stdDropdown = form.createDropdown(`std_${question.id}`);
-                const options = ['None', ...oshaRefs];
+                const options = ['None', ...oshaRefs.map(sanitizeText)];
                 const uniqueOptions = Array.from(new Set(options));
                 
                 stdDropdown.setOptions(uniqueOptions);
