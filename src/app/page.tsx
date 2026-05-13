@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { StartAssessmentForm } from '@/components/StartAssessmentForm';
-import { ShieldCheck, FolderOpen, Settings } from 'lucide-react';
+import { ShieldCheck, FolderOpen, Settings, Download } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -26,6 +26,10 @@ export default function Home() {
               <Settings size={16} />
               Question Configuration
             </Link>
+            <a href="/api/export-pdf" download="blank_assessment_template.pdf" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors mt-2">
+              <Download size={16} />
+              Download Fillable PDF
+            </a>
           </div>
         </div>
 
