@@ -124,23 +124,32 @@ export async function GET() {
 
                 y -= 30;
 
-                // Standard Dropdown (OSHA)
-                page.drawText('Standard:', { x: margin, y, size: 10, font: boldFont });
-                const stdDropdown = form.createDropdown(`std_${question.id}`);
-                
                 let oshaRefs: string[] = [];
                 if (question.references && question.references.osha) {
                     oshaRefs = splitReferenceLines(question.references.osha);
                 }
+
+                if (oshaRefs.length > 0) {
+                    page.drawText('Reference Standards:', { x: margin, y, size: 9, font: boldFont, color: rgb(0.4, 0.4, 0.4) });
+                    y -= 12;
+                    for (const ref of oshaRefs) {
+                        const refLines = wrapText(`• ${ref}`, contentWidth, font, 8);
+                        checkNewPage(refLines.length * 10 + 100);
+                        for (const rLine of refLines) {
+                            page.drawText(rLine, { x: margin, y, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
+                            y -= 10;
+                        }
+                    }
+                    y -= 5;
+                }
                 
-                // Add a "None" option and limit string lengths for PDF compatibility if needed, 
-                // but let's try pushing the full lines. PDF-lib dropdowns might truncate long strings in UI but they work.
-                const options = ['None', ...oshaRefs.map(r => r.substring(0, 100) + (r.length > 100 ? '...' : ''))];
-                // PDF dropdown options must be unique strings, so we will deduplicate just in case
+                page.drawText('Aligned Standard:', { x: margin, y, size: 10, font: boldFont });
+                const stdDropdown = form.createDropdown(`std_${question.id}`);
+                const options = ['None', ...oshaRefs];
                 const uniqueOptions = Array.from(new Set(options));
                 
                 stdDropdown.setOptions(uniqueOptions);
-                stdDropdown.addToPage(page, { x: margin + 60, y: y - 5, width: contentWidth - 60, height: 18 });
+                stdDropdown.addToPage(page, { x: margin + 100, y: y - 5, width: contentWidth - 100, height: 18 });
 
                 y -= 30;
 
