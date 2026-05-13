@@ -186,10 +186,11 @@ export async function GET() {
 
         const pdfBytes = await pdfDoc.save();
 
-        return new NextResponse(Buffer.from(pdfBytes), {
+        return new NextResponse(pdfBytes as any, {
             headers: {
                 'Content-Type': 'application/pdf',
                 'Content-Disposition': 'attachment; filename="blank_assessment_template.pdf"',
+                'Content-Length': pdfBytes.length.toString(),
             },
         });
     } catch (error) {
