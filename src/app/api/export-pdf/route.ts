@@ -35,7 +35,8 @@ function sanitizeText(text: string): string {
         .replace(/\u00A7/g, 'Sec. ')
         .replace(/\u00B5/g, 'u')
         .replace(/\u00B0/g, ' deg')
-        .replace(/[^\x00-\x7F]/g, '');
+        .replace(/\t/g, '    ')
+        .replace(/[^\x20-\x7E\n\r]/g, '');
 }
 
 function splitReferenceLines(value: string): string[] {
